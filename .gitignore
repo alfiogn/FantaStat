@@ -1,3 +1,9 @@
+# Custom
+bashrc
+data/
+__*.vim
+*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

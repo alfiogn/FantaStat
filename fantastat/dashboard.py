@@ -512,10 +512,12 @@ class dashboard():
                     data[idx]['Preso'] = si_o_no
                     idx = np.where(self.db['Nome'].values == asta_player)[0][0]
                     self.db.loc[idx, 'Preso'] = si_o_no
+                    data[idx]['Preso'] = si_o_no
                     role = self.db.loc[idx, 'R']
 
                     if asta_rm:
                         asta_team = self.db.loc[idx, 'Team']
+                        data[idx]['Team'] = ''
                         tmp_cost = self.Lega[asta_team][role].pop(asta_player)
                         print("Removing", asta_player, "("+str(tmp_cost)+") from asta_team "+asta_team)
                     elif asta_team is not None:

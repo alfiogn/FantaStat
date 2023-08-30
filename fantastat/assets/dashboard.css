@@ -1,0 +1,28 @@
+body {
+  background-color: rgb(255, 255, 255);
+}
+
+
+#_dash-global-error-container {
+  padding: 10px
+}
+
+.fantastat-options {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.dash-header > div {
+  display: inline-block !important;
+  white-space: wrap !important;
+}
+
+.column-header--hide, .column-header--sort {
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+.columns-actions, .column-header-name {
+  width: 50% !important;
+}
+

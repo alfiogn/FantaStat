@@ -1,1 +1,1 @@
-from . import driver, championship, player, utils, dashboard
+from . import driver, championship, utils, dashboard

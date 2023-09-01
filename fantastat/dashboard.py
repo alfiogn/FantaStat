@@ -26,7 +26,7 @@ class dashboard():
         # update data
         browser = driver.driver(headless=headless)
         self.download_path = browser.download_path
-        # utils.DownloadXLSX(browser, q, s, v)
+        utils.DownloadXLSX(browser, q, s, v)
         self.SerieA = championship.Archive(y0, y1, browser, sa, last=last,
                                            prob=prob, rig=rig, approb=approb)
         browser.quit()

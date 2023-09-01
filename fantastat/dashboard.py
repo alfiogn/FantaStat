@@ -62,7 +62,7 @@ class dashboard():
         self.ID_btn_backup = 'fantastat-btn-backup'
         self.ID_btn_export = 'fantastat-btn-export'
         # load database
-        self.db = self.SerieA.PresentPlayersAndStats.db
+        self.db = self.SerieA.GetLastStats()
 
         # auxiliary variables to update data
         # flag: top, semi-top, low cost, hype e hidden
@@ -73,7 +73,6 @@ class dashboard():
         self.orig_new_idxs = np.arange(self.db.shape[0])
         self.old_backup_count = 0
 
-        # TODO: backup and asta saving
         # notes
         self.backup_notes_file = self.download_path + '/asta_notes_backup.pickle'
         self.loadBackup()
@@ -422,10 +421,17 @@ class dashboard():
             html.Div(id=self.ID_glob_graphs),
         ])
 
-    def optionsCallbacks(self):
-        return None
+    def Run(self, debug=False, port=8050, run=True):
+        self.app.layout = self.Layout()
+        self.RegisterCallbacks()
+        if run:
+            self.app.run_server(port=port, debug=debug)
 
-    def dataCallbacks(self):
+
+    ####### ####### #### #######
+    #######   Callbacks  #######
+    ####### ####### #### #######
+    def RegisterCallbacks(self):
         # NOTE: only one callback can have an output
         @self.app.callback(
             Output(self.ID_table, 'data'),
@@ -537,9 +543,6 @@ class dashboard():
 
             return data, sdcond, asta_data
 
-        return None
-
-    def graphCallbacks(self):
         @self.app.callback(
             Output(self.ID_filt_graphs, "children"),
             Input(self.ID_table, "derived_virtual_data"),
@@ -594,9 +597,7 @@ class dashboard():
                     # dcc.Graph(figure=fig2, style=style),
                 ], style={'display': 'flex'})
             ]
-        return None
 
-    def globGraphCallbacks(self):
         @self.app.callback(
             Output(self.ID_glob_graphs, "children"),
             Input(self.ID_dd_year, 'value')
@@ -617,21 +618,6 @@ class dashboard():
                 ], style={'display': 'flex'})
                 for i in [1, 2] #[0, 1, 2] TODO: correct english mean
             ]
-
-        return None
-
-    def RegisterCallbacks(self):
-        self.optionsCallbacks()
-        self.dataCallbacks()
-        self.graphCallbacks()
-        self.globGraphCallbacks()
-
-    def Run(self, debug=False, port=8050, run=True):
-        self.app.layout = self.Layout()
-        self.RegisterCallbacks()
-        if run:
-            self.app.run_server(port=port, debug=debug)
-
 
     ####### ####### ####### ####### #######
     #######   Write the excel file  #######

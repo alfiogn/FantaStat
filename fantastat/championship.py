@@ -500,7 +500,7 @@ class Archive():
 
         files = files[:n]
 
-        if self.last_loaded and files[0] in self.LastPlayersFiles:
+        if self.LastPlayers is not None and (self.last_loaded and files[0] in self.LastPlayersFiles):
             return None
 
         self.LastPlayersFiles = files

@@ -3,6 +3,17 @@ A tool to prepare for the "Asta del Fantacalcio". Fantalega on [Fantacalcio](htt
 
 FantaStat is a plotly dashboard to analyse fanta-football data to prepare the auction.
 
+## Run
+
+You have first to set your username and password of [Fantacalcio](https://www.fantacalcio.it/)
+as environmental variables `USERNAME` and `PASSWORD`. Then you can run the command
+```
+python app.py
+```
+and go to the browser url [http://127.0.0.1:8050/](http://127.0.0.1:8050/).
+
+Note: if it crashes, it might be a problem of the browser or internet connection.
+Try to rerun the app.
 
 ## The data
 

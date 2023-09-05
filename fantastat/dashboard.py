@@ -23,6 +23,7 @@ class dashboard():
         self.year0 = y0
         self.year1 = y1
         self.nyears = y1 - y0 + 1
+        self.lastDays = last
         # update data
         browser = driver.driver(headless=headless)
         self.download_path = browser.download_path
@@ -50,6 +51,9 @@ class dashboard():
         self.ID_dd_year = 'fantastat-list-year'
         self.default_year = 'Last Days'
         self.old_year = 'Last Days'
+        self.ID_dd_howmanydays = 'fantastat-list-howmanydays'
+        self.default_howmanydays = '%d' % self.lastDays
+        self.old_howmanydays = '%d' % self.lastDays
         self.ID_dd_doy = 'fantastat-list-days-or-year'
         self.default_doy = 'Last Days'
         self.old_doy = 'Last Year'
@@ -157,10 +161,10 @@ class dashboard():
             self.dbAsta.iloc[-1, 3*i] = self.MlnBudget - np.sum(self.dbAsta.iloc[:-1, 3*i])
             self.dbAsta.iloc[-1, 3*i+1] = 100 - np.sum(self.dbAsta.iloc[:-1, 3*i+1])
 
-    def exchangeData(self, data, year):
+    def exchangeData(self, data, year, n=20):
         new_data = None
         if year == 'Last Days':
-            new_data = self.SerieA.GetLastStats()
+            new_data = self.SerieA.GetLastStats(n)
         elif int(year) == (2000 + self.year1 + 1):
             new_data = self.db
         else:
@@ -274,6 +278,14 @@ class dashboard():
                     ['Last Days'] + ['20' + str(i) for i in range(self.year1+1, self.year0-1, -1)],
                     self.default_year,
                     id=self.ID_dd_year,
+                ),
+                style=dd_style
+            ),
+            html.Div(
+                dcc.Dropdown(
+                    ['%d' % (i + 1)  for i in range(self.lastDays)],
+                    self.default_howmanydays,
+                    id=self.ID_dd_howmanydays,
                 ),
                 style=dd_style
             ),
@@ -444,6 +456,7 @@ class dashboard():
             Input(self.ID_btn_export, 'n_clicks'),
             Input(self.ID_dd_q_colors, 'value'),
             Input(self.ID_dd_year, 'value'),
+            Input(self.ID_dd_howmanydays, 'value'),
             # Asta
             Input('btn-register-buy', 'n_clicks'),
             Input('btn-register-rm', 'n_clicks'),
@@ -458,7 +471,7 @@ class dashboard():
         )
         def change_highlight_and_backup_stats_and_asta(
             # Stats
-            vdata, vrows, bckp_clicks, exprt_clicks, group, year,
+            vdata, vrows, bckp_clicks, exprt_clicks, group, year, days,
             # Asta
             asta_buy, asta_rm, asta_team, asta_player, asta_cost,
             # States
@@ -494,6 +507,11 @@ class dashboard():
                 print("Get data from", year)
                 self.old_year = year
                 return self.exchangeData(data, year), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
+
+            elif trig_id == self.ID_dd_howmanydays and year == 'Last Days' and days != self.old_howmanydays:
+                print("Get data from last ", days)
+                self.old_howmanydays = days
+                return self.exchangeData(data, year, n=int(days)), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
 
             # NOTE: avoid using this, better to use the data filter
             # elif trig_id == self.ID_dd_role and role != self.old_role and False:
@@ -546,9 +564,10 @@ class dashboard():
         @self.app.callback(
             Output(self.ID_filt_graphs, "children"),
             Input(self.ID_table, "derived_virtual_data"),
-            Input(self.ID_table, "derived_virtual_selected_rows")
+            Input(self.ID_table, "derived_virtual_selected_rows"),
+            Input(self.ID_dd_howmanydays, 'value'),
         )
-        def update_graphs(vdata, sel_vdata):
+        def update_graphs(vdata, sel_vdata, n):
             if sel_vdata is None:
                 sel_vdata = []
 
@@ -558,13 +577,19 @@ class dashboard():
             vdata = pd.DataFrame.from_dict(vdata)
             if self.ID_old_graphs_names is None:
                 self.ID_old_graphs_names = np.sort(vdata['Nome'].values)
-            elif len(self.ID_old_graphs_names) == len(vdata['Nome'].values):
-                if np.all(self.ID_old_graphs_names == np.sort(vdata['Nome'].values)):
-                    raise PreventUpdate
+            elif n == self.old_howmanydays:
+                if len(self.ID_old_graphs_names) == len(vdata['Nome'].values):
+                    if np.all(self.ID_old_graphs_names == np.sort(vdata['Nome'].values)):
+                        raise PreventUpdate
+
 
             print("    Update graphs for %d players" % len(vdata))
 
-            player_story = self.SerieA.GetPlayerStory()
+            player_story = None
+            if n is None:
+                player_story = self.SerieA.GetPlayerStory()
+            else:
+                player_story = self.SerieA.GetPlayerStory(n=int(n))
 
             df = vdata.merge(
                 player_story, left_on=['R', 'Nome', 'Squadra'],
@@ -572,7 +597,7 @@ class dashboard():
             )
             df.drop(columns=[ci for ci in df.columns if '_x' in ci], inplace=True)
             df.columns = [ci.replace('_y', '') for ci in df.columns]
-            df = df.loc[:, ['R', 'Nome', 'Squadra', 'Day', 'Mean', 'Bonus', 'Malus']]
+            df = df.loc[:, ['R', 'Nome', 'Squadra', 'Day', 'Mean', 'FantaMean', 'Bonus']]
             df.drop(index=df.index[df.Mean.isna()], inplace=True)
 
             # # highlight selected data
@@ -584,17 +609,20 @@ class dashboard():
             color_map = self.SerieA.TeamColorsDict(only_bg=True)
             color_map_name = {df.loc[i, 'Nome']:color_map[df.loc[i, 'Squadra']] for i in df.index}
             fig0 = px.line(df, x='Day', y='Mean', color='Nome', markers=True,
-                           color_discrete_map=color_map_name)
-            fig1 = px.line(df, x='Day', y='Bonus', color='Nome', markers=True,
-                           color_discrete_map=color_map_name)
-            # fig2 = px.line(df, x='Day', y='Malus', color='Nome', markers=True,
-            #                color_discrete_map=color_map_name)
-            style = {'width': '50%'}
+                           title='Media',
+                           color_discrete_map=color_map_name)#, line_shape="spline")
+            fig1 = px.line(df, x='Day', y='FantaMean', color='Nome', markers=True,
+                           title='Fantamedia',
+                           color_discrete_map=color_map_name)#, line_shape="spline")
+            fig2 = px.line(df, x='Day', y='Bonus', color='Nome', markers=True,
+                           title='Bonus',
+                           color_discrete_map=color_map_name)#, line_shape="spline")
+            style = {'width': '33%'}
             return [html.H6("Andamento giocatori", style={"font-weight": "bold"})] + [
                 html.Div([
                     dcc.Graph(figure=fig0, style=style),
                     dcc.Graph(figure=fig1, style=style),
-                    # dcc.Graph(figure=fig2, style=style),
+                    dcc.Graph(figure=fig2, style=style),
                 ], style={'display': 'flex'})
             ]
 
@@ -608,7 +636,7 @@ class dashboard():
             print("    Update global graphs for year", year)
             style = {'width': '33%'}
             em0 = self.SerieA.PlotEnglishMean()
-            em1 = self.SerieA.PlotEnglishMeanYear(int(year[-2:])-1)
+            em1 = self.SerieA.PlotEnglishMeanYear(int(year[-2:]) - 1)
             em2 = self.SerieA.PlotEnglishMeanYear(int(year[-2:]))
             return [html.H6("Grafici per squadra", style={"font-weight": "bold"})] + [
                 html.Div([
@@ -616,7 +644,7 @@ class dashboard():
                     dcc.Graph(figure=em1[i], style=style),
                     dcc.Graph(figure=em2[i], style=style),
                 ], style={'display': 'flex'})
-                for i in [1, 2] #[0, 1, 2] TODO: correct english mean
+                for i in [2, 1] # TODO: sistemare media inglese, 0]
             ]
 
     ####### ####### ####### ####### #######

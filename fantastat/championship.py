@@ -39,7 +39,9 @@ def MatchPlayerList(n, t, db):
 
 class championship():
     def __init__(self, y, b, url, prefix, present=False):
-        self.map = lambda x: np.array(x.replace('[', '').replace(']', '').split(), dtype=int)
+        self.map = lambda x: np.array(
+            x.replace('[', '').replace(']', '').replace(',', '').split(),
+            dtype=int)
         self.year = y
         self.url = url
         self.db = None
@@ -74,20 +76,21 @@ class championship():
         return data
 
     def ScrapAll(self):
-        self.browser.Get(self.url)
+        self.browser.get(self.url)
         self.browser.Click("//button[contains(., 'Accetta')]")
-        y = []
+        y = None
         count = 0
         while y is None and count < 15:
             time.sleep(0.25)
             y = self.browser.find_elements(By.XPATH, "//option[contains(., '20%d-%d')]" % (self.year, self.year+1))[0]
             count += 1
-        try:
-            y.click()
-        except:
-            RuntimeError("Year 20%d-%d not found at %s" % (self.year, self.year+1, self.browser.current_url), y)
+        if y.get_property('selected') is None:
+            try:
+                y.click()
+            except:
+                RuntimeError("Year 20%d-%d not found at %s" % (self.year, self.year+1, self.browser.current_url), y)
         time.sleep(1)
-        self.browser.refresh()
+        # self.browser.refresh()
         df = pd.DataFrame(data=[[np.zeros(3, dtype=int)]*NTEAMS]*NDAYS)
         print("Scraping year", self.year)
 
@@ -104,7 +107,7 @@ class championship():
                 RuntimeWarning("Day %d of year %d missing" % (i + 1, self.year))
                 continue
             bdays[i].click()
-            time.sleep(0.25)
+            time.sleep(1.0)
             home_out = self.ScrapDay()
             print("day", i+1)
 
@@ -117,14 +120,16 @@ class championship():
             #     df = df.iloc[:i, :]
             #     break
 
-            try:
-                for j in range(home_out.shape[0]):
-                    team_out = np.where(teams == home_out[j, 0])[0][0]
-                    df.loc[i, home_out[j, 0]] = np.array([1, int(home_out[j, 1]), team_out], dtype=int)
-                    team_home = np.where(teams == home_out[j, 2])[0][0]
-                    df.loc[i, home_out[j, 2]] = np.array([0, int(home_out[j, -1]), team_home], dtype=int)
-            except:
-                RuntimeError(home_out)
+            # try:
+            for j in range(home_out.shape[0]):
+                team_out = np.where(teams == home_out[j, 2])[0][0]
+                ghome = home_out[j, 1]
+                df.loc[i, home_out[j, 0]] = [1, 0 if ghome == '' else int(ghome), team_out]
+                team_home = np.where(teams == home_out[j, 0])[0][0]
+                gout = home_out[j, 3]
+                df.loc[i, home_out[j, 2]] = [0, 0 if gout == '' else int(gout), team_home]
+            # except:
+            #     RuntimeError(home_out)
 
         df.to_csv(self.file, index=False)
         self.db = df
@@ -374,7 +379,7 @@ class PlayersList():
                             if lll[k] == 'recuperabile':
                                 injre += ['rientro']
                                 break
-                            if lll[k] == 'out' and lll[k+1] in ['contro', 'per', 'a']:
+                            if lll[k] == 'out' and lll[k+1] in ['contro', 'per', 'a', 'nella']:
                                 injre += [' '.join(lll[k:])]
                                 break
                             if lll[k] == 'da' and lll[k+1] == 'valutare':
@@ -470,8 +475,8 @@ class Archive():
             with open(self.backup_last, 'rb') as f:
                 self.LastPlayersFiles, self.LastPlayers = pickle.load(f)
                 self.last_loaded = True
-        self.LastStats = None
-        self.PlayerStory = None
+        self.LastStats = {}
+        self.PlayerStory = {}
 
         self.GetInfo()
 
@@ -542,53 +547,54 @@ class Archive():
             pickle.dump([self.LastPlayersFiles, self.LastPlayers], f)
             self.last_loaded = True
 
-    def GetLastStats(self):
-        if self.LastStats is None:
+    def GetLastStats(self, n=20):
+        if self.LastStats.get(n) is None:
             cols = ['Pg', 'Mv', 'Mf', 'Gf', 'Rigori', 'Ass', 'Malus']
-            self.LastStats = self.PresentPlayersAndStats.db.copy()
-            self.LastStats.loc[:, cols] = 0
+            self.LastStats[n] = self.PresentPlayersAndStats.db.copy()
+            dbn = self.LastStats[n]
+            dbn.loc[:, cols] = 0
             ndays = self.LastPlayers[0]['Pg'].values*0.0 + 1e-10
             for dbi in self.LastPlayers[::-1]:
-                self.LastStats['Pg'] += dbi['Pg']
+                dbn['Pg'] += dbi['Pg']
                 ndays += dbi['Pg'].values
                 idx = dbi['Pg'] > 0
-                self.LastStats.loc[idx, 'Mv']     += dbi.loc[idx, 'Mv']
-                self.LastStats.loc[idx, 'Mf']     += dbi.loc[idx, 'Mf']
-                self.LastStats.loc[idx, 'Gf']     += dbi.loc[idx, 'Gf']
-                self.LastStats.loc[idx, 'Rigori'] += dbi.loc[idx, 'Rigori']
-                self.LastStats.loc[idx, 'Ass']    += dbi.loc[idx, 'Ass']
-                self.LastStats.loc[idx, 'Malus']  += dbi.loc[idx, 'Malus']
-            self.LastStats['Mv'] = np.round(self.LastStats['Mv'].values/ndays, 2)
-            self.LastStats['Mf'] = np.round(self.LastStats['Mf'].values/ndays, 2)
+                dbn.loc[idx, 'Mv']     += dbi.loc[idx, 'Mv']
+                dbn.loc[idx, 'Mf']     += dbi.loc[idx, 'Mf']
+                dbn.loc[idx, 'Gf']     += dbi.loc[idx, 'Gf']
+                dbn.loc[idx, 'Rigori'] += dbi.loc[idx, 'Rigori']
+                dbn.loc[idx, 'Ass']    += dbi.loc[idx, 'Ass']
+                dbn.loc[idx, 'Malus']  += dbi.loc[idx, 'Malus']
+            dbn['Mv'] = np.round(dbn['Mv'].values/ndays, 2)
+            dbn['Mf'] = np.round(dbn['Mf'].values/ndays, 2)
 
-        return self.LastStats
+        return self.LastStats[n]
 
-    def GetPlayerStory(self):
-        if self.PlayerStory is None:
+    def GetPlayerStory(self, n=None):
+        if self.PlayerStory.get(n) is None:
             cols = ['Pg', 'Mv', 'Mf', 'Gf', 'Rigori', 'Ass', 'Malus']
             db = self.PresentPlayersAndStats.db
             n_players = db.shape[0]
-            ndays = len(self.LastPlayers)
+            ndays = n if n is not None else len(self.LastPlayers)
             mean = np.zeros((n_players, ndays))
+            fantamean = np.zeros((n_players, ndays))
             bonus = np.zeros((n_players, ndays))
-            malus = np.zeros((n_players, ndays))
-            for i,dbi in enumerate(self.LastPlayers[::-1]):
+            for i,dbi in enumerate(self.LastPlayers[:n][::-1]):
                 mean[:, i]  = dbi['Mv'].values
+                fantamean[:, i] = dbi['Mf'].values
                 bonus[:, i] = dbi['Mf'].values + dbi['Malus'].values - dbi['Mv'].values
-                malus[:, i] = dbi['Malus'].values
 
             mean = np.cumsum(mean, axis=1)
+            fantamean = np.cumsum(fantamean, axis=1)
             bonus = np.cumsum(bonus, axis=1)
-            malus = np.cumsum(malus, axis=1)
             to_keep = np.where(mean[:, -1] > 1e-10)[0]
-            self.PlayerStory = pd.DataFrame(columns=['R', 'Nome', 'Squadra', 'Day', 'Mean', 'Bonus', 'Malus'])
+            self.PlayerStory[n] = pd.DataFrame(columns=['R', 'Nome', 'Squadra', 'Day', 'Mean', 'FantaMean', 'Bonus'])
             for i in to_keep:
                 const_val = db.loc[i, ['R', 'Nome', 'Squadra']].values
                 for j in range(ndays):
-                    n = len(self.PlayerStory.index)
-                    self.PlayerStory.loc[n, :] = const_val.tolist() + [j + 1, mean[i, j], bonus[i, j], malus[i, j]]
+                    ni = len(self.PlayerStory[n].index)
+                    self.PlayerStory[n].loc[ni, :] = const_val.tolist() + [j + 1, mean[i, j], fantamean[i, j], bonus[i, j]]    #, malus[i, j]]
 
-        return self.PlayerStory
+        return self.PlayerStory[n]
 
     def GetInfo(self):
         self.GetStory()
@@ -653,48 +659,45 @@ class Archive():
         ]
 
     def PlotEnglishMean(self):
-        columns = ['team', 'year', 'mean', 'done', 'got']
+        columns = ['Team', 'Year', 'Mean', 'Fatti', 'Subiti']
         df = pd.DataFrame(data=np.empty((0, 5)), columns=columns)
         for i,s in enumerate(self.Story):
             means = s.GetEnglishMean().iloc[-1, :]
             golsum = s.GetGolSum().iloc[-1, :]
             golneg = s.GetGolNeg().iloc[-1, :]
             df0 = pd.DataFrame(data=np.empty((0, 5)), columns=columns)
-            df0['team'] = means.index
-            df0['year'] = self.year0 + i
-            df0['mean'] = means.values
-            df0['done'] = golsum.values
-            df0['got'] = -golneg.values
+            df0['Team'] = means.index
+            df0['Year'] = self.year0 + i
+            df0['Mean'] = means.values
+            df0['Fatti'] = golsum.values
+            df0['Subiti'] = -golneg.values
             df = pd.concat([df, df0])
 
         idx = np.full(df.shape[0], 0)
         for i in self.PresentTeams:
-            idx += df.team.values == i.upper()
+            idx += df.Team.values == i.upper()
 
         idx = idx > 0
         df = df[idx]
 
-        df['team'] = [t.capitalize() for t in df['team']]
+        df['Team'] = [t.capitalize() for t in df['Team']]
 
         color_map = self.TeamColorsDict(only_bg=True) #List(df.team)
-        fig0 = px.line(df, x='year', y='mean', color='team', markers=True,
+        fig0 = px.line(df, x='Year', y='Mean', color='Team', markers=True,
                        color_discrete_map=color_map,
-                       title="English mean per anno per squadra",
-                       line_shape="spline")
-        fig1 = px.line(df, x='year', y='done', color='team', markers=True,
+                       title="English mean", line_shape="spline")
+        fig1 = px.line(df, x='Year', y='Fatti', color='Team', markers=True,
                        color_discrete_map=color_map,
-                       title="Gol fatti per anno per squadra",
-                       line_shape="spline")
-        fig2 = px.line(df, x='year', y='got', color='team', markers=True,
+                       title="Gol fatti", line_shape="spline")
+        fig2 = px.line(df, x='Year', y='Subiti', color='Team', markers=True,
                        color_discrete_map=color_map,
-                       title="Gol subiti per anno per squadra",
-                       line_shape="spline")
+                       title="Gol subiti", line_shape="spline")
         # fig.write_html(self.browser.download_path+'/year_means.html')
         return fig0, fig1, fig2
 
     def PlotEnglishMeanYear(self, y):
-        columns = ['team', 'day', 'mean', 'done', 'got']
-        golsum, golneg = None, None
+        columns = ['Team', 'Day', 'Mean', 'Fatti', 'Subiti']
+        means, golsum, golneg = None, None, None
         if (y - self.year0) == len(self.Story):
             means = self.Present.GetEnglishMean()
             golsum = self.Present.GetGolSum()
@@ -707,26 +710,27 @@ class Archive():
         df = pd.DataFrame(data=np.empty((0, 5)), columns=columns)
         for i in means.columns:
             df0 = pd.DataFrame(data=np.empty((0, 5)), columns=columns)
-            df0['day'] = means.index
-            df0['team'] = i
-            df0['mean'] = means[i]
-            df0['done'] = golsum[i]
-            df0['got'] = -golneg[i]
+            df0['Day'] = means.index
+            df0['Day'] += 1
+            df0['Team'] = i
+            df0['Mean'] = means[i]
+            df0['Fatti'] = golsum[i]
+            df0['Subiti'] = -golneg[i]
             df = pd.concat([df, df0])
 
-        df['team'] = [t.capitalize() for t in df['team']]
+        df['Team'] = [t.capitalize() for t in df['Team']]
         color_map = self.TeamColorsDict(only_bg=True) #List(df.team)
-        fig0 = px.line(df, x='day', y='mean', color='team', markers=True,
+        fig0 = px.line(df, x='Day', y='Mean', color='Team', markers=True,
                        color_discrete_map=color_map,
-                       title='English mean per l\'anno 20' + str(y) + ' per squadra',
+                       title='English mean per l\'anno 20' + str(y),
                        line_shape="spline")
-        fig1 = px.line(df, x='day', y='done', color='team', markers=True,
+        fig1 = px.line(df, x='Day', y='Fatti', color='Team', markers=True,
                        color_discrete_map=color_map,
-                       title='Gol fatti nell\'anno 20' + str(y) + ' per squadra',
+                       title='Gol fatti nell\'anno 20' + str(y),
                        line_shape="spline")
-        fig2 = px.line(df, x='day', y='got', color='team', markers=True,
+        fig2 = px.line(df, x='Day', y='Subiti', color='Team', markers=True,
                        color_discrete_map=color_map,
-                       title='Gol subiti nell\'anno 20' + str(y) + ' per squadra',
+                       title='Gol subiti nell\'anno 20' + str(y),
                       line_shape="spline")
         # fig.write_html(self.browser.download_path+'/last_means.html')
         return fig0, fig1, fig2

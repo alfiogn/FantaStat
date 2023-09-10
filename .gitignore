@@ -1,5 +1,8 @@
 # Custom
 Appunti/
+csv_to_notes.py
+notes_to_csv.py
+asta_notes.csv
 bashrc
 data/
 __*.vim

@@ -660,7 +660,7 @@ class dashboard():
 
         # Formatting
         XXL, XL, L, M, S = 70, 30, 20, 12, 5
-        lengths = [S, S, S, L, L] + 14*[S] + [L, S, S, S, S, XXL]
+        lengths = [S, S, S, S, L, L] + 14*[S] + [L, S, S, S, S, XXL]
         aligns = ['center' if i == S else 'left' for i in lengths]
         for l in range(len(lengths)):
             cf = workbook.add_format()
@@ -682,6 +682,12 @@ class dashboard():
         def markcells(sheet, rows, col, c=0):
             col_dict = {0:'#C6EFCE', 1:'#FFF0C7', 2:'#C7D4FF', 3:'#FFC7CE', 4:'#E7C7FF'}
             color   = workbook.add_format({'bg_color': col_dict[c]})
+            for i in range(len(rows)):
+                sheet.conditional_format(rows[i]+1, col, rows[i]+1, col,
+                        {'type' : 'unique', 'format' : color})
+
+        def markteams(sheet, rows, col, team):
+            color = workbook.add_format({'bg_color': self.SerieA.TeamColorsDict(only_bg=True)[team]})
             for i in range(len(rows)):
                 sheet.conditional_format(rows[i]+1, col, rows[i]+1, col,
                         {'type' : 'unique', 'format' : color})

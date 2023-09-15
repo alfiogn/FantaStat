@@ -1,5 +1,6 @@
 # Custom
 Appunti/
+appunti_sheet.xlsx
 csv_to_notes.py
 notes_to_csv.py
 asta_notes.csv
@@ -7,6 +8,7 @@ bashrc
 data/
 __*.vim
 *.log
+__flaskcache__
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

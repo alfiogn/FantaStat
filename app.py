@@ -19,9 +19,9 @@ db = dashboard(15, 22, quotazioni, statistiche, voti, seriea,
 # NOTE: Set headless=False to see what Firefox does
 
 if __name__ == '__main__':
-    # db.Run(debug=True, run=False)
-    # db.Run(debug=True)
-    db.Run()
+    # db.run_server(debug=True, run=False)
+    # db.run_server(debug=True)
+    db.run_server()
 
 
 

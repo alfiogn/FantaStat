@@ -385,6 +385,9 @@ class PlayersList():
                             if lll[k] == 'da' and lll[k+1] == 'valutare':
                                 injre += [' '.join(lll[k:])]
                                 break
+                            if lll[k] == 'in' and lll[k+1] == 'dubbio':
+                                injre += [' '.join(lll[k:])]
+                                break
                     if len(injpl) != len(injre):
                         print("Length of", injpl, "different from", injre, "\nfrom:", injreason)
                         # pdb.set_trace()

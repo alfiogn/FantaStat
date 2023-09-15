@@ -1,11 +1,12 @@
 from . import driver
 from . import utils, championship
 
-import os, sys, pickle, pdb, threading
+import os, sys, pickle, pdb, threading, time
 import xlrd
 import pandas as pd
 import numpy as np
 
+# from flask_caching import Cache
 from dash import Dash, dash_table, dcc, html, ctx
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
@@ -42,6 +43,12 @@ class dashboard():
                 {"name": "viewport", "content": "width=device-width, initial-scale=1"}
             ]
         )
+        # self.cache = Cache(self.app.server, config={
+        #     'CACHE_TYPE': 'filesystem',
+        #     'CACHE_DIR': '__flaskcache__'
+        # })
+        # self.app.config.suppress_callback_exceptions = True
+        # self.timeout = 20
         self.app.title = 'FantaStat'
         # object ids
         self.ID_table = 'fantastat-datatable'
@@ -88,6 +95,12 @@ class dashboard():
         self.RoleDict = {'P': 3, 'D': 8, 'C': 8, 'A': 6}
         self.loadBackupAsta()
         self.computeAsta()
+
+        # Prepare run
+        self.app.layout = self.Layout()
+        self.RegisterCallbacks()
+
+
 
     def backup(self, data):
         # merge self.db with virtual data of table
@@ -433,12 +446,9 @@ class dashboard():
             html.Div(id=self.ID_glob_graphs),
         ])
 
-    def Run(self, debug=False, port=8050, run=True):
-        self.app.layout = self.Layout()
-        self.RegisterCallbacks()
+    def run_server(self, debug=False, port=8050, run=True):
         if run:
             self.app.run_server(port=port, debug=debug)
-
 
     ####### ####### #### #######
     #######   Callbacks  #######
@@ -469,6 +479,7 @@ class dashboard():
             State('table-league', 'data'),
             prevent_initial_call=True
         )
+        # @self.cache.memoize(timeout=self.timeout)
         def change_highlight_and_backup_stats_and_asta(
             # Stats
             vdata, vrows, bckp_clicks, exprt_clicks, group, year, days,
@@ -479,14 +490,45 @@ class dashboard():
         ):
             trig_id = ctx.triggered_id
             if trig_id is None or trig_id in ['input-register-team', 'input-register-player', 'input-register-cost']:
-                return data, sdcond, asta_data
+                raise PreventUpdate
 
             print("    Modifying", trig_id)
             print("    ", end="")
+            if (trig_id == 'btn-register-buy' or trig_id == 'btn-register-rm') \
+                and asta_player is not None:
+                asta_rm = trig_id == 'btn-register-rm'
+                if (not asta_rm and asta_cost is not None) or asta_rm:
+                    si_o_no = 'No' if asta_rm else 'Si'
+                    idx = np.where(pd.DataFrame.from_dict(data)['Nome'].values == asta_player)[0][0]
+                    if data[idx]['Preso'] != si_o_no:
+                        data[idx]['Preso'] = si_o_no
+                        idx = np.where(self.db['Nome'].values == asta_player)[0][0]
+                        self.db.loc[idx, 'Preso'] = si_o_no
+                        data[idx]['Preso'] = si_o_no
+                        role = self.db.loc[idx, 'R']
+
+                        if asta_rm:
+                            asta_team = self.db.loc[idx, 'Team']
+                            data[idx]['Team'] = ''
+                            tmp_cost = self.Lega[asta_team][role].pop(asta_player)
+                            print("Removing", asta_player, "("+str(tmp_cost)+") from asta_team "+asta_team)
+                        elif asta_team is not None:
+                            self.db.loc[idx, 'Team'] = asta_team
+                            data[idx]['Team'] = asta_team
+                            self.Lega[asta_team][role][asta_player] = asta_cost
+                            print("Adding", asta_player, "("+str(asta_cost)+") to asta_team "+asta_team)
+
+                    self.computeAsta()
+
+                else:
+                    print(asta_player, 'already taken' if not asta_rm else 'not taken yet')
+
+                return data, sdcond, self.dbAsta.to_dict('records')
+
             if trig_id == self.ID_btn_export:
                 thread = threading.Thread(target=self.toExcel, args=[data])
                 thread.start()
-                return data, sdcond, asta_data
+                raise PreventUpdate
 
             if trig_id == self.ID_btn_backup and self.old_backup_count < bckp_clicks:
                 print("Saving to", self.backup_notes_file, 'and', self.backup_asta_file)
@@ -496,25 +538,25 @@ class dashboard():
                 thread0.start()
                 thread1 = threading.Thread(target=self.backupAsta)
                 thread1.start()
-                return data, sdcond, asta_data
+                raise PreventUpdate
 
-            elif trig_id == self.ID_dd_q_colors and self.old_q_colors.lower() != group.lower():
+            if trig_id == self.ID_dd_q_colors and self.old_q_colors.lower() != group.lower():
                 print("Coloring", group.lower())
                 self.old_q_colors = group
                 return data, self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
 
-            elif trig_id == self.ID_dd_year and year != self.old_year:
+            if trig_id == self.ID_dd_year and year != self.old_year:
                 print("Get data from", year)
                 self.old_year = year
                 return self.exchangeData(data, year), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
 
-            elif trig_id == self.ID_dd_howmanydays and year == 'Last Days' and days != self.old_howmanydays:
+            if trig_id == self.ID_dd_howmanydays and year == 'Last Days' and days != self.old_howmanydays:
                 print("Get data from last ", days)
                 self.old_howmanydays = days
                 return self.exchangeData(data, year, n=int(days)), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
 
             # NOTE: avoid using this, better to use the data filter
-            # elif trig_id == self.ID_dd_role and role != self.old_role and False:
+            # if trig_id == self.ID_dd_role and role != self.old_role and False:
             #     print("Filter by role", role)
             #     self.old_role = role
             #     if role != self.default_role:
@@ -522,44 +564,9 @@ class dashboard():
             #     else:
             #         return self.db.to_dict('records'), sdcond, asta_data
 
-            elif trig_id == 'btn-register-buy' or trig_id == 'btn-register-rm' \
-                and asta_player is not None:
-                asta_rm = trig_id == 'btn-register-rm'
-                if not asta_rm and asta_cost is not None:
-                    si_o_no = 'No' if asta_rm else 'Si'
-                    idx = -1
-                    for i,el in enumerate(data):
-                        if el['Nome'] == asta_player:
-                            idx = i
-                            break
-                if data[idx]['Preso'] != si_o_no:
-                    data[idx]['Preso'] = si_o_no
-                    idx = np.where(self.db['Nome'].values == asta_player)[0][0]
-                    self.db.loc[idx, 'Preso'] = si_o_no
-                    data[idx]['Preso'] = si_o_no
-                    role = self.db.loc[idx, 'R']
-
-                    if asta_rm:
-                        asta_team = self.db.loc[idx, 'Team']
-                        data[idx]['Team'] = ''
-                        tmp_cost = self.Lega[asta_team][role].pop(asta_player)
-                        print("Removing", asta_player, "("+str(tmp_cost)+") from asta_team "+asta_team)
-                    elif asta_team is not None:
-                        self.db.loc[idx, 'Team'] = asta_team
-                        data[idx]['Team'] = asta_team
-                        self.Lega[asta_team][role][asta_player] = asta_cost
-                        print("Adding", asta_player, "("+str(asta_cost)+") to asta_team "+asta_team)
-
-                    self.computeAsta()
-
-                else:
-                    print(asta_player, 'already taken' if not asta_rm else 'not taken yet')
-
-                return data, sdcond, self.dbAsta.to_dict('records')
-
             print(" -- * -- * -- ")
 
-            return data, sdcond, asta_data
+            raise PreventUpdate
 
         @self.app.callback(
             Output(self.ID_filt_graphs, "children"),
@@ -567,6 +574,7 @@ class dashboard():
             Input(self.ID_table, "derived_virtual_selected_rows"),
             Input(self.ID_dd_howmanydays, 'value'),
         )
+        # @self.cache.memoize(timeout=self.timeout)
         def update_graphs(vdata, sel_vdata, n):
             if sel_vdata is None:
                 sel_vdata = []
@@ -630,6 +638,7 @@ class dashboard():
             Output(self.ID_glob_graphs, "children"),
             Input(self.ID_dd_year, 'value')
         )
+        # @self.cache.memoize(timeout=self.timeout)
         def glob_graphs(year):
             if year == 'Last Days':
                 year = str(2000 + self.year1 + 1)

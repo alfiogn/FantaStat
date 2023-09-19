@@ -65,6 +65,7 @@ class driver(Firefox):
 
     def FantaLogin(self, url='https://www.fantacalcio.it/'):
         self.get(url)
+        print("Login to fantacalcio.it", end=" --> ")
         self.CookiesAccept()
         # find user button
         self.WaitClick("/html/body/main/header/nav[1]/ul/li[8]/button")

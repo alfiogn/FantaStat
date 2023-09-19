@@ -8,6 +8,7 @@ bashrc
 data/
 __*.vim
 *.log
+.~lock.*.xlsx#
 __flaskcache__
 
 # Byte-compiled / optimized / DLL files

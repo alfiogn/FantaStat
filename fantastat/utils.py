@@ -42,11 +42,11 @@ def DownloadXLSX(b, q, s, v):
     ext = '.xlsx'
     for i in range(15, 24):
         if not b.CheckData(quot_prefix(i) + str(ext)) \
-           or (i == 23 and b.CheckTimeStamp(quot_prefix(i) + str(ext))):
+           or (i == 23 and b.CheckTimeStamp(quot_prefix(i) + str(ext), days=2)):
             print("Download quotazioni", i)
             b.Download(q(i), prefix='quotazioni' + '20' + str(i))
         if not b.CheckData(stat_prefix(i) + str(ext)) \
-           or (i == 23 and b.CheckTimeStamp(stat_prefix(i) + str(ext))):
+           or (i == 23 and b.CheckTimeStamp(stat_prefix(i) + str(ext), days=2)):
             print("Download statistiche", i)
             b.Download(s(i), prefix=stat_prefix(i))
         for j in range(1, 39):

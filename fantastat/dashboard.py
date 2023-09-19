@@ -77,7 +77,7 @@ class dashboard():
 
         # auxiliary variables to update data
         # flag: top, semi-top, low cost, hype e hidden
-        self.cols_to_remember = ['Preso', 'Team', 'Flag', 'Slot', 'Note']
+        self.cols_to_remember = ['Team', 'Flag', 'Note']
         self.cols_to_data = ['Pg', 'Mv', 'Mf', 'Gf', 'Rigori', 'Ass', 'Malus']
         self.cols_to_barplot = ['Qt.A', 'FVM', 'Pg', 'Mv', 'Mf', 'Gf']
         self.cols_to_quant = self.cols_to_barplot[:-1]
@@ -104,22 +104,21 @@ class dashboard():
 
     def backup(self, data):
         # merge self.db with virtual data of table
+        merge_cols = ['R', 'Nome', 'Squadra']
         self.db = self.db.merge(
-            pd.DataFrame.from_dict(data).loc[:, ['Nome'] + self.cols_to_remember],
-            left_on=['Nome'], right_on=['Nome'], how='left'
+            pd.DataFrame.from_dict(data).loc[:, merge_cols + self.cols_to_remember],
+            left_on=merge_cols, right_on=merge_cols, how='left'
         )
         for c in self.cols_to_remember:
             idxs = self.db[c + '_y'].isna()
             self.db.loc[idxs, c + '_y'] = self.db.loc[idxs, c + '_x'].values
         self.db.drop(columns=[ci + '_x'  for ci in self.cols_to_remember], inplace=True)
         self.db.columns = [ci.replace('_y', '') for ci in self.db.columns]
-        col_preso = self.db.pop("Preso")
-        self.db.insert(loc=0, column="Preso", value=col_preso)
         col_preso = self.db.pop("Team")
-        self.db.insert(loc=1, column="Team", value=col_preso)
+        self.db.insert(loc=0, column="Team", value=col_preso)
         # save pickle
         with open(self.backup_notes_file, 'wb') as f:
-            pickle.dump(self.db.loc[:, ['Nome'] + self.cols_to_remember], f)
+            pickle.dump(self.db.loc[:, merge_cols + self.cols_to_remember], f)
 
     def backupAsta(self):
         with open(self.backup_asta_file, 'wb') as f:
@@ -132,14 +131,12 @@ class dashboard():
         if os.path.isfile(self.backup_notes_file):
             with open(self.backup_notes_file, 'rb') as f:
                 notes = pickle.load(f)
-                self.db = self.db.merge(notes, left_on=['Nome'], right_on=['Nome'], how='left')
-                col_preso = self.db.pop("Preso")
-                self.db.insert(loc=0, column="Preso", value=col_preso)
+                merge_cols = ['R', 'Nome', 'Squadra']
+                self.db = self.db.merge(notes, left_on=merge_cols, right_on=merge_cols, how='left')
                 col_preso = self.db.pop("Team")
-                self.db.insert(loc=1, column="Team", value=col_preso)
+                self.db.insert(loc=0, column="Team", value=col_preso)
         else:
-            self.db.insert(loc=0, column='Preso', value='No')
-            self.db.insert(loc=1, column='Team', value='')
+            self.db.insert(loc=0, column='Team', value='')
             for nc in self.cols_to_remember[1:]:
                 self.db[nc] = ''
 
@@ -206,17 +203,19 @@ class dashboard():
                 {"name": [i, '-'], "id": i+'-'}
             ]
         obj_style = lambda x: {'width': str(x)+'%', 'padding': '10px'}
-        perc = [9, 15, 24, 52]
+        perc = [8, 17, 25, 50]
         roles = ['P', 'D', 'C', 'A']
-        per_role = [1, 3.8, 4, 2.75]
+        per_role = [1, 3.8, 4.3, 2.75]
         perc_per_role = ""
         role_per_team = ""
         for i in range(4):
             perc_per_role += roles[i] + " " + str(perc[i]) \
                     + "% (" + str(int(self.MlnBudget*perc[i]/100)) + "M)"
-            utili = int(per_role[i]*len(self.db['Squadra'].unique())/len(self.Teams))
-            role_per_team += roles[i] + " " + str(int(self.db[self.db['R'] == roles[i]].shape[0]/len(self.Teams))) + \
-                    "(" + str(utili) + ")"
+            qtl75 = self.db[self.db['R'] == roles[i]]['Qt.A'].quantile(0.75)
+            qtl90 = self.db[self.db['R'] == roles[i]]['Qt.A'].quantile(0.9)
+            utili = int(np.sum(self.db['Qt.A'].values > qtl75)/len(self.Teams))
+            utili_small = int(np.sum(self.db['Qt.A'].values > qtl90)/len(self.Teams))
+            role_per_team += "%s %d(%d)" % (roles[i], utili, utili_small)
             if i != 3:
                 perc_per_role += "    -    "
                 role_per_team += "    -    "
@@ -249,7 +248,10 @@ class dashboard():
                     html.H6("Statistiche generali", style={"font-weight": "bold"}),
                     html.P("Spesa % per ruolo: " + perc_per_role),
                     html.P("Giocatori utili per squadra: " + role_per_team),
-                    html.P("Flags: top (T), semi-top (ST), low-cost (LC), hype (Y), hidden (H)"),
+                    html.P("Flags:"),
+                    html.P("fasce(+-),"),
+                    html.P("top (T), semi-top (ST), buono (B), low-cost (LC),"),
+                    html.P("hype (Y), hidden (H), no (N)"),
                 ], style=obj_style(100)),
                 # # Appunti vari
                 # dbc.Row([
@@ -348,7 +350,7 @@ class dashboard():
             {
                 'if': {
                     'filter_query': '{{Inf}} != ""'.format(db.loc[index, :]),
-                    'column_id': ['Preso', 'Team', 'R', 'RM', 'Nome']
+                    'column_id': ['Team', 'R', 'RM', 'Nome']
                 },
                 'backgroundColor': inj_color
             } for index in range(db.shape[0])
@@ -393,7 +395,7 @@ class dashboard():
 
     def Layout(self):
         numeric = ['Qt.A', 'FVM', 'Pg', 'Mv', 'Mf', 'Gf', 'Rigori', 'Ass', 'Malus',
-                   'N.Tit', 'Slot', 'Rig', 'Pun']
+                   'N.Tit', 'Rig', 'Pun']
         return html.Div([
             self.Header(),
             self.VizOptions(),
@@ -497,23 +499,23 @@ class dashboard():
             if (trig_id == 'btn-register-buy' or trig_id == 'btn-register-rm') \
                 and asta_player is not None:
                 asta_rm = trig_id == 'btn-register-rm'
-                if (not asta_rm and asta_cost is not None) or asta_rm:
-                    si_o_no = 'No' if asta_rm else 'Si'
+                if (not asta_rm and asta_cost is not None and asta_team is not None) or asta_rm:
                     idx = np.where(pd.DataFrame.from_dict(data)['Nome'].values == asta_player)[0][0]
-                    if data[idx]['Preso'] != si_o_no:
-                        data[idx]['Preso'] = si_o_no
-                        idx = np.where(self.db['Nome'].values == asta_player)[0][0]
-                        self.db.loc[idx, 'Preso'] = si_o_no
-                        data[idx]['Preso'] = si_o_no
-                        role = self.db.loc[idx, 'R']
+                    si_o_no = asta_team
+                    if asta_rm:
+                        si_o_no = ''
+                    if data[idx]['Team'] != si_o_no:
+                        idx0 = np.where(self.db['Nome'].values == asta_player)[0][0]
+                        role = self.db.loc[idx0, 'R']
 
                         if asta_rm:
-                            asta_team = self.db.loc[idx, 'Team']
+                            asta_team = self.db.loc[idx0, 'Team']
+                            self.db.loc[idx0, 'Team'] = ''
                             data[idx]['Team'] = ''
                             tmp_cost = self.Lega[asta_team][role].pop(asta_player)
                             print("Removing", asta_player, "("+str(tmp_cost)+") from asta_team "+asta_team)
                         elif asta_team is not None:
-                            self.db.loc[idx, 'Team'] = asta_team
+                            self.db.loc[idx0, 'Team'] = asta_team
                             data[idx]['Team'] = asta_team
                             self.Lega[asta_team][role][asta_player] = asta_cost
                             print("Adding", asta_player, "("+str(asta_cost)+") to asta_team "+asta_team)
@@ -625,6 +627,7 @@ class dashboard():
             fig2 = px.line(df, x='Day', y='Bonus', color='Nome', markers=True,
                            title='Bonus',
                            color_discrete_map=color_map_name)#, line_shape="spline")
+            fig2.update_xaxes(range=(0, self.SerieA.Present.last_day + 1), constrain='domain')
             style = {'width': '33%'}
             return [html.H6("Andamento giocatori", style={"font-weight": "bold"})] + [
                 html.Div([
@@ -647,13 +650,15 @@ class dashboard():
             em0 = self.SerieA.PlotEnglishMean()
             em1 = self.SerieA.PlotEnglishMeanYear(int(year[-2:]) - 1)
             em2 = self.SerieA.PlotEnglishMeanYear(int(year[-2:]))
+            for ei in em2:
+                ei.update_xaxes(range=(0, self.SerieA.Present.last_day + 1), constrain='domain')
             return [html.H6("Grafici per squadra", style={"font-weight": "bold"})] + [
                 html.Div([
                     dcc.Graph(figure=em0[i], style=style),
                     dcc.Graph(figure=em1[i], style=style),
                     dcc.Graph(figure=em2[i], style=style),
                 ], style={'display': 'flex'})
-                for i in [2, 1] # TODO: sistemare media inglese, 0]
+                for i in [2, 1, 0]
             ]
 
     ####### ####### ####### ####### #######

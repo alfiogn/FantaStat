@@ -52,9 +52,11 @@ class championship():
         self.browser = b
         self.filebase = prefix + '20' + str(y) + '.csv'
         self.file = '/'.join([b.download_path, self.filebase])
+        self.last_day = NDAYS
         if b.CheckData(self.filebase):
-            if not b.CheckTimeStamp(self.filebase) or not present:
+            if not b.CheckTimeStamp(self.filebase, days=2) or not present:
                 self.db = pd.read_csv(self.file).applymap(self.map)
+                self.last_day = self.db.shape[0]
                 self.toRead = False
 
         if self.toRead:
@@ -116,9 +118,11 @@ class championship():
                 teams.sort()
                 df.columns = teams
 
-            # if home_out[-1, 0] == '-':
-            #     df = df.iloc[:i, :]
-            #     break
+            # pdb.set_trace()
+            if np.all(home_out[:, 1] == ''):
+                df = df.iloc[:i, :]
+                self.last_day = i + 1
+                break
 
             # try:
             for j in range(home_out.shape[0]):
@@ -150,7 +154,7 @@ class championship():
         return self.GolNegByTeam
 
     def EnglishMean(self):
-        ndays = NDAYS
+        ndays = self.last_day
         ndays = self.db.shape[0]
         values = pd.DataFrame(np.zeros((ndays, NTEAMS)), columns=self.db.columns)
         golsum = pd.DataFrame(np.zeros((ndays, NTEAMS)), columns=self.db.columns)
@@ -196,7 +200,7 @@ class PlayersList():
         self.backupfile = '/'.join([b.download_path, self.backupfilebase])
         self.Loaded = False
         if b.CheckData(self.backupfilebase):
-            if not b.CheckTimeStamp(self.backupfilebase):
+            if not b.CheckTimeStamp(self.backupfilebase, days=2):
                 with open(self.backupfile, 'rb') as f:
                     self.db = pickle.load(f)
                     self.Loaded = True

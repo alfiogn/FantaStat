@@ -3,6 +3,30 @@ from fantastat.dashboard import dashboard
 import pandas as pd
 import numpy as np
 
+import argparse
+
+parser = argparse.ArgumentParser(description='Open FantaStat dashboard.')
+parser.add_argument('--db-to-csv', dest='tocsv', help='pandas (in pickle) database to be converted to csv')
+parser.add_argument('--csv-to-db', dest='todb', help='csv to be converted into pandas (in pickle)')
+
+args = parser.parse_args()
+
+if (args.tocsv is not None) ^ (args.todb is not None):
+    if args.tocsv is not None:
+        file = open(args.tocsv, 'rb')
+        if args.tocsv[-7:] != '.pickle':
+            raise RuntimeError("Extension of %s not .pickle" % args.tocsv)
+        os.system('cp %s %s_backup' % (args.tocsv, args.tocsv))
+        db = pickle.load(file)
+        newfile = args.tocsv[:-7] + '.csv'
+        db.to_csv(newfile, index=False)
+    else:
+        if args.todb[-4:] != '.csv':
+            raise RuntimeError("Extension of %s not .csv" % args.todb)
+        newfile = args.todb[:-4] + '.pickle'
+        db = pd.read_csv(args.todb)
+        pickle.dump(db, open(newfile, 'wb'))
+
 
 probabili_formazioni_2324 = 'https://www.fantacalcio.it/news/calcio-italia/05_08_2023/calciomercato-come-cambia-la-serie-a-2023-24-le-probabili-formazioni-446506'
 rigoristi = 'https://www.fantacalcio.it/rigoristi-serie-a'

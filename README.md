@@ -15,6 +15,10 @@ and go to the browser url [http://127.0.0.1:8050/](http://127.0.0.1:8050/).
 Note: if it crashes, it might be a problem of the browser or internet connection.
 Try to rerun the app.
 
+Advice: once the dashboard is open, click the `BACKUP CHANGES` button; once the pickle
+database is created, you can convert it to `.csv` and modify it using excel instead of
+modifying it directly from the dashboard.
+
 ## The data
 
 It downloads all the necessary data, scraping them from the internet:

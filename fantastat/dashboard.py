@@ -130,7 +130,7 @@ class dashboard():
     def loadBackup(self):
         if os.path.isfile(self.backup_notes_file):
             with open(self.backup_notes_file, 'rb') as f:
-                notes = pickle.load(f)
+                notes = pd.read_pickle(f)
                 merge_cols = ['R', 'Nome', 'Squadra']
                 self.db = self.db.merge(notes, left_on=merge_cols, right_on=merge_cols, how='left')
                 col_preso = self.db.pop("Team")
@@ -143,7 +143,7 @@ class dashboard():
     def loadBackupAsta(self):
         if os.path.isfile(self.backup_asta_file):
             with open(self.backup_asta_file, 'rb') as f:
-                self.MyName, self.Teams, self.Lega, self.dbAsta = pickle.load(f)
+                self.MyName, self.Teams, self.Lega, self.dbAsta = pd.read_pickle(f)
         else:
             self.MyName = 'banana steakhouse'
             self.Teams = [self.MyName, 'Case', 'Piegro', 'Fore', 'Barney', 'Taffo', 'Niub', 'Lomba', 'Ismo', 'Fusto']
@@ -628,11 +628,15 @@ class dashboard():
                            title='Bonus',
                            color_discrete_map=color_map_name)#, line_shape="spline")
             fig2.update_xaxes(range=(0, self.SerieA.Present.last_day + 1), constrain='domain')
-            style = {'width': '33%'}
+            style = {'width': '100%'}
             return [html.H6("Andamento giocatori", style={"font-weight": "bold"})] + [
                 html.Div([
                     dcc.Graph(figure=fig0, style=style),
+                ], style={'display': 'flex'}),
+                html.Div([
                     dcc.Graph(figure=fig1, style=style),
+                ], style={'display': 'flex'}),
+                html.Div([
                     dcc.Graph(figure=fig2, style=style),
                 ], style={'display': 'flex'})
             ]

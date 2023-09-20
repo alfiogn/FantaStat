@@ -6,9 +6,10 @@ notes_to_csv.py
 asta_notes.csv
 bashrc
 data/
+my_asta_notes.csv
 __*.vim
 *.log
-.~lock.*.xlsx#
+.~lock.*
 __flaskcache__
 
 # Byte-compiled / optimized / DLL files

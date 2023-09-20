@@ -15,6 +15,14 @@ NTEAMS = 20
 NDAYS = 38
 NAMES_REGEX = "([A-Z][a-z']*[A-Z][a-z]*|[A-Z][a-z]* [A-Z][a-z]*|[A-Z][a-z]*)/([A-Z][a-z']*[A-Z][a-z]*|[A-Z][a-z]* [A-Z][a-z]*|[A-Z][a-z]*)?"
 
+def ReadExcel(f, **kwargs):
+    print("Opening file ", f)
+    if f.endswith('.xlsx'):
+        return pd.read_excel(f, engine='openpyxl', **kwargs)
+    elif f.endswith('.xls'):
+        return pd.read_excel(f, engine='xlrd', **kwargs)
+    else:
+        raise RuntimeError('format of %f not recognised')
 
 def MatchPlayer(n, t, db):
     possible_names = db.loc[db['Squadra'].values == t, 'Nome'].values
@@ -55,7 +63,7 @@ class championship():
         self.last_day = NDAYS
         if b.CheckData(self.filebase):
             if not b.CheckTimeStamp(self.filebase, days=2) or not present:
-                self.db = pd.read_csv(self.file).applymap(self.map)
+                self.db = pd.read_csv(self.file).map(self.map)
                 self.last_day = self.db.shape[0]
                 self.toRead = False
 
@@ -202,14 +210,14 @@ class PlayersList():
         if b.CheckData(self.backupfilebase):
             if not b.CheckTimeStamp(self.backupfilebase, days=2):
                 with open(self.backupfile, 'rb') as f:
-                    self.db = pickle.load(f)
+                    self.db = pd.read_pickle(f)
                     self.Loaded = True
         self.Read()
 
     def Read(self):
         if not self.Loaded:
             # Tutti e Ceduti
-            df = pd.read_excel(self.fileq, sheet_name='Tutti', skiprows=1)
+            df = ReadExcel(self.fileq, sheet_name='Tutti', skiprows=1)
 
             # check for non mantra values
             idx = []
@@ -229,7 +237,7 @@ class PlayersList():
                         pickle.dump(self.db[['Nome', 'Squadra', 'N.Tit', 'N.Sos']], f)
                     iidx = np.zeros(self.db.shape[0], dtype=int)
                     for i in range(day, 0, -1):
-                        dfi = pickle.load(
+                        dfi = pd.read_pickle(
                             open('/'.join([self.browser.download_path,
                                            'prob_form_20'+str(self.year)+'_'+str(i)+'.pickle']), 'rb'),
                         )
@@ -281,10 +289,10 @@ class PlayersList():
 
     def AddStats(self, fdb):
         # Tutti e Ceduti
-        df = pd.read_excel(self.files, sheet_name='Tutti', skiprows=1)
+        df = ReadExcel(self.files, sheet_name='Tutti', skiprows=1)
         dfold = None
         if self.offset > 0:
-            dfold = pd.read_excel(self.fileold, sheet_name='Tutti', skiprows=1)
+            dfold = ReadExcel(self.fileold, sheet_name='Tutti', skiprows=1)
             teams = df['Squadra'].unique()
             teamsold = dfold['Squadra'].unique()
             for i in teams:
@@ -480,7 +488,7 @@ class Archive():
         self.last_loaded = False
         if os.path.isfile(self.backup_last):
             with open(self.backup_last, 'rb') as f:
-                self.LastPlayersFiles, self.LastPlayers = pickle.load(f)
+                self.LastPlayersFiles, self.LastPlayers = pd.read_pickle(f)
                 self.last_loaded = True
         self.LastStats = {}
         self.PlayerStory = {}
@@ -525,7 +533,7 @@ class Archive():
             last_db = self.PresentPlayersAndStats.db.copy()
             last_db.loc[:, cols] = 0
             # read data
-            df = pd.read_excel(f, sheet_name='Statistico', skiprows=3)
+            df = ReadExcel(f, sheet_name='Statistico', skiprows=3)
             idx = df['Unnamed: 1'].isnull().values.nonzero()[0]
             for i in range(len(idx)-1):
                 team_data = df.iloc[idx[i]:idx[i+1], :]
@@ -544,7 +552,7 @@ class Archive():
                             bonus = gf*3 + ass
                             malus = gs + rp*3 + 0.5*amm + esp
 
-                            last_db.loc[jdx, cols] = [pg, voto, voto+bonus-malus, gf, rf-rs, ass, malus]
+                            last_db.loc[jdx, cols] = [pg, voto, voto+bonus-malus, gf-gs, rf-rs, ass, malus]
                     except:
                         not_found = True
 
@@ -561,7 +569,7 @@ class Archive():
             dbn = self.LastStats[n]
             dbn.loc[:, cols] = 0
             ndays = self.LastPlayers[0]['Pg'].values*0.0 + 1e-10
-            for dbi in self.LastPlayers[::-1]:
+            for dbi in self.LastPlayers[:n][::-1]:
                 dbn['Pg'] += dbi['Pg']
                 ndays += dbi['Pg'].values
                 idx = dbi['Pg'] > 0

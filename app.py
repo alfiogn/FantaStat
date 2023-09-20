@@ -17,7 +17,7 @@ if (args.tocsv is not None) ^ (args.todb is not None):
         if args.tocsv[-7:] != '.pickle':
             raise RuntimeError("Extension of %s not .pickle" % args.tocsv)
         os.system('cp %s %s_backup' % (args.tocsv, args.tocsv))
-        db = pickle.load(file)
+        db = pd.read_pickle(file)
         newfile = args.tocsv[:-7] + '.csv'
         db.to_csv(newfile, index=False)
     else:

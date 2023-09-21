@@ -482,6 +482,7 @@ class Archive():
         self.PresentPlayersAndStats = None
         # last days data
         self.LastDays = last
+        self.LastKey = lambda n0, n1: '%d %d' % (n0, n1)
         self.backup_last = '/'.join([b.download_path, 'backup_last_n_days.pickle'])
         self.LastPlayersFiles = None
         self.LastPlayers = None
@@ -562,14 +563,14 @@ class Archive():
             pickle.dump([self.LastPlayersFiles, self.LastPlayers], f)
             self.last_loaded = True
 
-    def GetLastStats(self, n=20):
-        if self.LastStats.get(n) is None:
+    def GetLastStats(self, n0=1, n1=20):
+        if self.LastStats.get(self.LastKey(n0, n1)) is None:
             cols = ['Pg', 'Mv', 'Mf', 'Gf', 'Rigori', 'Ass', 'Malus']
-            self.LastStats[n] = self.PresentPlayersAndStats.db.copy()
-            dbn = self.LastStats[n]
+            self.LastStats[self.LastKey(n0, n1)] = self.PresentPlayersAndStats.db.copy()
+            dbn = self.LastStats[self.LastKey(n0, n1)]
             dbn.loc[:, cols] = 0
             ndays = self.LastPlayers[0]['Pg'].values*0.0 + 1e-10
-            for dbi in self.LastPlayers[:n][::-1]:
+            for dbi in self.LastPlayers[::-1][(n0 - 1):n1]:
                 dbn['Pg'] += dbi['Pg']
                 ndays += dbi['Pg'].values
                 idx = dbi['Pg'] > 0
@@ -582,18 +583,20 @@ class Archive():
             dbn['Mv'] = np.round(dbn['Mv'].values/ndays, 2)
             dbn['Mf'] = np.round(dbn['Mf'].values/ndays, 2)
 
-        return self.LastStats[n]
+        return self.LastStats[self.LastKey(n0, n1)]
 
-    def GetPlayerStory(self, n=None):
-        if self.PlayerStory.get(n) is None:
+    def GetPlayerStory(self, n0=None, n1=None):
+        if self.PlayerStory.get(self.LastKey(n0, n1)) is None:
             cols = ['Pg', 'Mv', 'Mf', 'Gf', 'Rigori', 'Ass', 'Malus']
             db = self.PresentPlayersAndStats.db
             n_players = db.shape[0]
-            ndays = n if n is not None else len(self.LastPlayers)
+            if n0 is None: n0 = 1
+            if n1 is None: n1 = len(self.LastPlayers)
+            ndays = n1
             mean = np.zeros((n_players, ndays))
             fantamean = np.zeros((n_players, ndays))
             bonus = np.zeros((n_players, ndays))
-            for i,dbi in enumerate(self.LastPlayers[:n][::-1]):
+            for i,dbi in enumerate(self.LastPlayers[::-1][(n0 - 1):n1]):
                 mean[:, i]  = dbi['Mv'].values
                 fantamean[:, i] = dbi['Mf'].values
                 bonus[:, i] = dbi['Mf'].values + dbi['Malus'].values - dbi['Mv'].values
@@ -602,22 +605,33 @@ class Archive():
             fantamean = np.cumsum(fantamean, axis=1)
             bonus = np.cumsum(bonus, axis=1)
             to_keep = np.where(mean[:, -1] > 1e-10)[0]
-            self.PlayerStory[n] = pd.DataFrame(columns=['R', 'Nome', 'Squadra', 'Day', 'Mean', 'FantaMean', 'Bonus'])
+            self.PlayerStory[self.LastKey(n0, n1)] = pd.DataFrame(columns=['R', 'Nome', 'Squadra', 'Day', 'Mean', 'FantaMean', 'Bonus'])
             for i in to_keep:
                 const_val = db.loc[i, ['R', 'Nome', 'Squadra']].values
                 for j in range(ndays):
-                    ni = len(self.PlayerStory[n].index)
-                    self.PlayerStory[n].loc[ni, :] = const_val.tolist() + [j + 1, mean[i, j], fantamean[i, j], bonus[i, j]]    #, malus[i, j]]
+                    ni = len(self.PlayerStory[self.LastKey(n0, n1)].index)
+                    self.PlayerStory[self.LastKey(n0, n1)].loc[ni, :] = \
+                            const_val.tolist() + [j + 1, mean[i, j], fantamean[i, j], bonus[i, j]]    #, malus[i, j]]
 
-        return self.PlayerStory[n]
+        return self.PlayerStory[self.LastKey(n0, n1)]
 
     def GetInfo(self):
+        print("Retrieve archive data:")
         self.GetStory()
+        print("    - players")
         self.GetPlayers()
+        print("    - last days")
         self.PresentGetLastNDays(self.LastDays)
         if self.PresentPlayersAndStats.db.shape[0] != self.LastPlayers[0].shape[0]:
             self.LastPlayers = None
             self.PresentGetLastNDays(self.LastDays)
+
+        # print("    - initialize last days combination")
+        # for i in range(self.LastDays - 1):
+        #     for j in range(i + 1, self.LastDays):
+        #         print("        %d - %d" % (i+1, j+1))
+        #         self.GetLastStats(n0=i + 1, n1=j + 1)
+        #         self.GetPlayerStory(n0=i + 1, n1=j + 1)
 
 
     def TeamColorsDict(self, only_bg=False):

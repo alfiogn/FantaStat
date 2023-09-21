@@ -59,6 +59,8 @@ class dashboard():
         self.default_year = 'Last Days'
         self.old_year = 'Last Days'
         self.ID_dd_howmanydays = 'fantastat-list-howmanydays'
+        self.default_howmanydays0 = 1
+        self.old_howmanydays0 = 1
         self.default_howmanydays = '%d' % self.lastDays
         self.old_howmanydays = '%d' % self.lastDays
         self.ID_dd_doy = 'fantastat-list-days-or-year'
@@ -171,10 +173,10 @@ class dashboard():
             self.dbAsta.iloc[-1, 3*i] = self.MlnBudget - np.sum(self.dbAsta.iloc[:-1, 3*i])
             self.dbAsta.iloc[-1, 3*i+1] = 100 - np.sum(self.dbAsta.iloc[:-1, 3*i+1])
 
-    def exchangeData(self, data, year, n=20):
+    def exchangeData(self, data, year, n0=1, n1=20):
         new_data = None
         if year == 'Last Days':
-            new_data = self.SerieA.GetLastStats(n)
+            new_data = self.SerieA.GetLastStats(n0=n0, n1=n1)
         elif int(year) == (2000 + self.year1 + 1):
             new_data = self.db
         else:
@@ -286,24 +288,29 @@ class dashboard():
 
     def VizOptions(self):
         dd_style = {'padding': '10px', 'width': '15%'}
+        ddL_style = {'padding': '10px', 'width': '20%'}
         obj = html.Div([
             # select year data
-            html.Div(
-                dcc.Dropdown(
-                    ['Last Days'] + ['20' + str(i) for i in range(self.year1+1, self.year0-1, -1)],
-                    self.default_year,
-                    id=self.ID_dd_year,
+            html.Div([
+                html.Div(
+                    dcc.Dropdown(
+                        ['Last Days'] + ['20' + str(i) for i in range(self.year1+1, self.year0-1, -1)],
+                        self.default_year,
+                        id=self.ID_dd_year,
+                    ),
                 ),
-                style=dd_style
-            ),
-            html.Div(
-                dcc.Dropdown(
-                    ['%d' % (i + 1)  for i in range(self.lastDays)],
-                    self.default_howmanydays,
-                    id=self.ID_dd_howmanydays,
-                ),
-                style=dd_style
-            ),
+                html.Div(
+                    dcc.RangeSlider(
+                        1, self.lastDays, 1, value=[1, self.lastDays],
+                        id=self.ID_dd_howmanydays
+                    ), style={'padding': '25px', 'width': '100%'},
+                    # dcc.Dropdown(
+                    #     ['%d' % (i + 1)  for i in range(self.lastDays)],
+                    #     self.default_howmanydays,
+                    #     id=self.ID_dd_howmanydays,
+                    # ),
+                )
+            ], style=ddL_style),
             # NOTE: not very useful, better to use the filters of datatable
             # # select role to visualize
             # html.Div(
@@ -552,10 +559,10 @@ class dashboard():
                 self.old_year = year
                 return self.exchangeData(data, year), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
 
-            if trig_id == self.ID_dd_howmanydays and year == 'Last Days' and days != self.old_howmanydays:
+            if trig_id == self.ID_dd_howmanydays and year == 'Last Days' and days != [self.old_howmanydays0, self.old_howmanydays]:
                 print("Get data from last ", days)
-                self.old_howmanydays = days
-                return self.exchangeData(data, year, n=int(days)), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
+                self.old_howmanydays0, self.old_howmanydays = days
+                return self.exchangeData(data, year, n0=self.old_howmanydays0, n1=self.old_howmanydays), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
 
             # NOTE: avoid using this, better to use the data filter
             # if trig_id == self.ID_dd_role and role != self.old_role and False:
@@ -599,7 +606,7 @@ class dashboard():
             if n is None:
                 player_story = self.SerieA.GetPlayerStory()
             else:
-                player_story = self.SerieA.GetPlayerStory(n=int(n))
+                player_story = self.SerieA.GetPlayerStory(n0=n[0], n1=n[1])
 
             df = vdata.merge(
                 player_story, left_on=['R', 'Nome', 'Squadra'],
@@ -628,7 +635,7 @@ class dashboard():
                            title='Bonus',
                            color_discrete_map=color_map_name)#, line_shape="spline")
             fig2.update_xaxes(range=(0, self.SerieA.Present.last_day + 1), constrain='domain')
-            style = {'width': '100%'}
+            style = {'width': '66%'}
             return [html.H6("Andamento giocatori", style={"font-weight": "bold"})] + [
                 html.Div([
                     dcc.Graph(figure=fig0, style=style),

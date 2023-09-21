@@ -2,6 +2,24 @@ body {
   background-color: rgb(255, 255, 255);
 }
 
+#fantastat-list-howmanydays .rc-slider-dot {
+  border-color: gray;
+  background-color: pink;
+  border: 1px solid;
+}
+#fantastat-list-howmanydays .rc-slider-dot-active {
+  border-color: black;
+  background-color: rgba(206, 23, 31);
+  border: 2px solid;
+}
+#fantastat-list-howmanydays .rc-slider-handle {
+  border-color: black;
+  background-color: rgba(206, 23, 31);
+  border: 3px solid;
+}
+#fantastat-list-howmanydays .rc-slider-track {
+  background-color: black;
+}
 
 #_dash-global-error-container {
   padding: 10px

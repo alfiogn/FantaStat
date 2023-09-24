@@ -119,6 +119,7 @@ class championship():
             bdays[i].click()
             time.sleep(1.0)
             home_out = self.ScrapDay()
+
             print("day", i+1)
 
             if i == 0:
@@ -536,8 +537,12 @@ class Archive():
             # read data
             df = ReadExcel(f, sheet_name='Statistico', skiprows=3)
             idx = df['Unnamed: 1'].isnull().values.nonzero()[0]
-            for i in range(len(idx)-1):
-                team_data = df.iloc[idx[i]:idx[i+1], :]
+            for i in range(len(idx)):
+                team_data = None
+                if i == len(idx) - 1:
+                    team_data = df.iloc[idx[i]:, :]
+                else:
+                    team_data = df.iloc[idx[i]:idx[i+1], :]
                 team_name = team_data.iloc[0, 0]
                 db = team_data.iloc[1:, 1:]
                 db1 = db.iloc[1:-1, 1:]
@@ -592,26 +597,39 @@ class Archive():
             n_players = db.shape[0]
             if n0 is None: n0 = 1
             if n1 is None: n1 = len(self.LastPlayers)
-            ndays = n1
+            ndays = n1 - n0 + 1
+            pg = np.zeros((n_players, ndays))
             mean = np.zeros((n_players, ndays))
             fantamean = np.zeros((n_players, ndays))
             bonus = np.zeros((n_players, ndays))
             for i,dbi in enumerate(self.LastPlayers[::-1][(n0 - 1):n1]):
+                pg[:, i]  = dbi['Pg'].values
                 mean[:, i]  = dbi['Mv'].values
                 fantamean[:, i] = dbi['Mf'].values
                 bonus[:, i] = dbi['Mf'].values + dbi['Malus'].values - dbi['Mv'].values
 
-            mean = np.cumsum(mean, axis=1)
-            fantamean = np.cumsum(fantamean, axis=1)
+            cpg = np.cumsum(pg, axis=1)
+            # mean = np.cumsum(mean, axis=1)
+            # fantamean = np.cumsum(fantamean, axis=1)
             bonus = np.cumsum(bonus, axis=1)
-            to_keep = np.where(mean[:, -1] > 1e-10)[0]
+            to_keep = np.where(cpg[:, -1] > 1e-10)[0]
             self.PlayerStory[self.LastKey(n0, n1)] = pd.DataFrame(columns=['R', 'Nome', 'Squadra', 'Day', 'Mean', 'FantaMean', 'Bonus'])
             for i in to_keep:
                 const_val = db.loc[i, ['R', 'Nome', 'Squadra']].values
                 for j in range(ndays):
                     ni = len(self.PlayerStory[self.LastKey(n0, n1)].index)
-                    self.PlayerStory[self.LastKey(n0, n1)].loc[ni, :] = \
-                            const_val.tolist() + [j + 1, mean[i, j], fantamean[i, j], bonus[i, j]]    #, malus[i, j]]
+                    if pg[i, j] > 1e-10:
+                        self.PlayerStory[self.LastKey(n0, n1)].loc[ni, :] = \
+                                const_val.tolist() + [
+                                    j + 1, mean[i, j],  #/pg[i, j],
+                                    fantamean[i, j],  #/pg[i, j],
+                                    bonus[i, j]
+                                ]    #, malus[i, j]]
+                    else:
+                        self.PlayerStory[self.LastKey(n0, n1)].loc[ni, :] = \
+                                const_val.tolist() + [
+                                    j + 1, pd.NA, pd.NA, bonus[i, j]
+                                ]    #, malus[i, j]]
 
         return self.PlayerStory[self.LastKey(n0, n1)]
 

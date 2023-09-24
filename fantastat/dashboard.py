@@ -59,10 +59,10 @@ class dashboard():
         self.default_year = 'Last Days'
         self.old_year = 'Last Days'
         self.ID_dd_howmanydays = 'fantastat-list-howmanydays'
-        self.default_howmanydays0 = 1
-        self.old_howmanydays0 = 1
         self.default_howmanydays = '%d' % self.lastDays
         self.old_howmanydays = '%d' % self.lastDays
+        self.default_howmanydays0 = 1
+        self.old_howmanydays0 = 1
         self.ID_dd_doy = 'fantastat-list-days-or-year'
         self.default_doy = 'Last Days'
         self.old_doy = 'Last Year'
@@ -70,8 +70,8 @@ class dashboard():
         self.default_role = 'Tutti'
         self.old_role = 'Tutti'
         self.ID_dd_q_colors = 'fantastat-list-qcolors'
-        self.default_q_colors = 'Global'
-        self.old_q_colors = 'Global'
+        self.default_q_colors = 'By team'
+        self.old_q_colors = 'By team'
         self.ID_btn_backup = 'fantastat-btn-backup'
         self.ID_btn_export = 'fantastat-btn-export'
         # load database
@@ -210,14 +210,15 @@ class dashboard():
         per_role = [1, 3.8, 4.3, 2.75]
         perc_per_role = ""
         role_per_team = ""
+        col_qt = 'FVM'
         for i in range(4):
             perc_per_role += roles[i] + " " + str(perc[i]) \
                     + "% (" + str(int(self.MlnBudget*perc[i]/100)) + "M)"
-            qtl75 = self.db[self.db['R'] == roles[i]]['Qt.A'].quantile(0.75)
-            qtl90 = self.db[self.db['R'] == roles[i]]['Qt.A'].quantile(0.9)
-            utili = int(np.sum(self.db['Qt.A'].values > qtl75)/len(self.Teams))
-            utili_small = int(np.sum(self.db['Qt.A'].values > qtl90)/len(self.Teams))
-            role_per_team += "%s %d(%d)" % (roles[i], utili, utili_small)
+            qtl70 = self.db[self.db['R'] == roles[i]]['FVM'].quantile(0.70)
+            qtl85 = self.db[self.db['R'] == roles[i]]['FVM'].quantile(0.9)
+            utili       = int(np.sum(self.db[self.db['R'] == roles[i]]['FVM'].values > qtl70)/len(self.Teams))
+            utili_small = int(np.sum(self.db[self.db['R'] == roles[i]]['FVM'].values > qtl85)/len(self.Teams))
+            role_per_team += "%s %d(%d)" % (roles[i], utili, utili_small if utili_small > 0 else 1)
             if i != 3:
                 perc_per_role += "    -    "
                 role_per_team += "    -    "
@@ -250,16 +251,23 @@ class dashboard():
                     html.H6("Statistiche generali", style={"font-weight": "bold"}),
                     html.P("Spesa % per ruolo: " + perc_per_role),
                     html.P("Giocatori utili per squadra: " + role_per_team),
-                    html.P("Flags:"),
-                    html.P("fasce(+-),"),
-                    html.P("top (T), semi-top (ST), buono (B), low-cost (LC),"),
-                    html.P("hype (Y), hidden (H), no (N)"),
+                    html.P("Flags: hype (Y), hidden (H), no (N); fasce (+-);"),
+                    html.P("top (T), semi-top (ST), buono (B), low-cost (LC);")
                 ], style=obj_style(100)),
-                # # Appunti vari
-                # dbc.Row([
-                #     html.H6("Squadre medie ok:"),
-                #     html.P("Bologna, Empoli, Torino, Verona"),
-                # ], style=obj_style(100)),
+                # Appunti vari
+                dbc.Row([
+                    html.H6("Appunti", style={"font-weight": "bold"}),
+                    html.P("Miglior difesa", style={"font-weight": "bold"}),
+                    html.P("    2022 - Top: Napoli, Lazio, Juve, Roma;    Semi-top: Torino, Inter, Milan, Lecce;    Medi: Udinese, Empoli, Monza"),
+                    html.P("Corrente - Top: Inter, Juve, Lecce;    Semi-top: Napoli, Lazio, Atalanta;    Medi: Roma, Juve, Monza, Milan"),
+                    html.P("Commenti: nel 22, non si sono confermate Atalanta e Salernitana, ma hanno stupito Monza e Lazio (risp 21)"),
+                    html.P(""),
+                    html.P("Miglior attacco", style={"font-weight": "bold"}),
+                    html.P("    2022 - Top: Napoli, Inter, Atalanta, Milan, Lazio;    Semi-top: Juve, Fiorentina, Roma, Salernitana;    Medi: Udinese, Sassuolo"),
+                    html.P("Corrente - Top: Inter, Roma, Juve;    Semi-top: Milan, Sassuolo, Fiorentina, Napoli, Lecce;    Medi: ND"),
+                    html.P("Commenti: nel 22, non si è confermata Udinese, ma hanno stupito Lazio, Fiorentina, Sassuolo"),
+                    html.P("")
+                ], style=obj_style(100)),
             ], width=6),
             dbc.Col(
                 html.Div(
@@ -289,28 +297,28 @@ class dashboard():
     def VizOptions(self):
         dd_style = {'padding': '10px', 'width': '15%'}
         ddL_style = {'padding': '10px', 'width': '20%'}
-        obj = html.Div([
+        obj1 = html.Div([
+            html.Div(
+                dcc.RangeSlider(
+                    1, self.lastDays, 1, value=[self.lastDays - self.SerieA.Present.last_day, self.lastDays],
+                    id=self.ID_dd_howmanydays
+                ), style={'padding': '35px', 'width': '50%'},
+                # dcc.Dropdown(
+                #     ['%d' % (i + 1)  for i in range(self.lastDays)],
+                #     self.default_howmanydays,
+                #     id=self.ID_dd_howmanydays,
+                # ),
+            )
+        ], className='fantastat-options')
+        obj0 = html.Div([
             # select year data
-            html.Div([
-                html.Div(
-                    dcc.Dropdown(
-                        ['Last Days'] + ['20' + str(i) for i in range(self.year1+1, self.year0-1, -1)],
-                        self.default_year,
-                        id=self.ID_dd_year,
-                    ),
-                ),
-                html.Div(
-                    dcc.RangeSlider(
-                        1, self.lastDays, 1, value=[1, self.lastDays],
-                        id=self.ID_dd_howmanydays
-                    ), style={'padding': '25px', 'width': '100%'},
-                    # dcc.Dropdown(
-                    #     ['%d' % (i + 1)  for i in range(self.lastDays)],
-                    #     self.default_howmanydays,
-                    #     id=self.ID_dd_howmanydays,
-                    # ),
-                )
-            ], style=ddL_style),
+            html.Div(
+                dcc.Dropdown(
+                    ['Last Days'] + ['20' + str(i) for i in range(self.year1+1, self.year0-1, -1)],
+                    self.default_year,
+                    id=self.ID_dd_year,
+                ), style=dd_style
+            ),
             # NOTE: not very useful, better to use the filters of datatable
             # # select role to visualize
             # html.Div(
@@ -323,7 +331,7 @@ class dashboard():
             # select colors by team or globally, in general by role
             html.Div(
                 dcc.Dropdown(
-                    [self.default_q_colors, 'By team'], self.default_q_colors,
+                    [self.default_q_colors, 'Global'], self.default_q_colors,
                     id=self.ID_dd_q_colors,
                 ),
                 style=dd_style
@@ -342,7 +350,7 @@ class dashboard():
             dcc.Interval(id='backup-interval', interval=180*1000, n_intervals=0),
         ], className='fantastat-options')
 
-        return obj
+        return obj0, obj1
 
     def DataConditional(self, group, db):
         inj_color = '#FF413633'
@@ -405,7 +413,7 @@ class dashboard():
                    'N.Tit', 'Rig', 'Pun']
         return html.Div([
             self.Header(),
-            self.VizOptions(),
+            *self.VizOptions(),
             dash_table.DataTable(
                 id=self.ID_table,
                 columns=[
@@ -549,7 +557,7 @@ class dashboard():
                 thread1.start()
                 raise PreventUpdate
 
-            if trig_id == self.ID_dd_q_colors and self.old_q_colors.lower() != group.lower():
+            if trig_id == self.ID_dd_q_colors: # and self.old_q_colors.lower() != group.lower():
                 print("Coloring", group.lower())
                 self.old_q_colors = group
                 return data, self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
@@ -560,6 +568,7 @@ class dashboard():
                 return self.exchangeData(data, year), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
 
             if trig_id == self.ID_dd_howmanydays and year == 'Last Days' and days != [self.old_howmanydays0, self.old_howmanydays]:
+                time.sleep(2)
                 print("Get data from last ", days)
                 self.old_howmanydays0, self.old_howmanydays = days
                 return self.exchangeData(data, year, n0=self.old_howmanydays0, n1=self.old_howmanydays), self.DataConditional(group, db=pd.DataFrame(vdata)), asta_data
@@ -580,16 +589,16 @@ class dashboard():
         @self.app.callback(
             Output(self.ID_filt_graphs, "children"),
             Input(self.ID_table, "derived_virtual_data"),
-            Input(self.ID_table, "derived_virtual_selected_rows"),
+            # Input(self.ID_table, "derived_virtual_selected_rows"),
             Input(self.ID_dd_howmanydays, 'value'),
         )
         # @self.cache.memoize(timeout=self.timeout)
-        def update_graphs(vdata, sel_vdata, n):
-            if sel_vdata is None:
-                sel_vdata = []
+        def update_graphs(vdata, n):
+            # if sel_vdata is None:
+            #     sel_vdata = []
 
-            if vdata is None:
-                return []
+            if vdata is None or len(vdata) == 0:
+                raise PreventUpdate
 
             vdata = pd.DataFrame.from_dict(vdata)
             if self.ID_old_graphs_names is None:
@@ -623,28 +632,28 @@ class dashboard():
             #           if i in derived_virtual_selected_rows else cls[dff['Squadra'].values[i]]
             #           for i in range(len(dff))]
 
+            df['Day'] += -np.max(df['Day']) + self.SerieA.Present.last_day - (self.lastDays - n[1])
+
             color_map = self.SerieA.TeamColorsDict(only_bg=True)
             color_map_name = {df.loc[i, 'Nome']:color_map[df.loc[i, 'Squadra']] for i in df.index}
             fig0 = px.line(df, x='Day', y='Mean', color='Nome', markers=True,
-                           title='Media',
+                           title='Media', #log_y=True,
                            color_discrete_map=color_map_name)#, line_shape="spline")
             fig1 = px.line(df, x='Day', y='FantaMean', color='Nome', markers=True,
-                           title='Fantamedia',
+                           title='Fantamedia', #log_y=True,
                            color_discrete_map=color_map_name)#, line_shape="spline")
             fig2 = px.line(df, x='Day', y='Bonus', color='Nome', markers=True,
                            title='Bonus',
                            color_discrete_map=color_map_name)#, line_shape="spline")
-            fig2.update_xaxes(range=(0, self.SerieA.Present.last_day + 1), constrain='domain')
-            style = {'width': '66%'}
+            # fig2.update_xaxes(range=(0, n[1] - n[0] + 1), constrain='domain')
+            style = {'width': '48%'}
             return [html.H6("Andamento giocatori", style={"font-weight": "bold"})] + [
                 html.Div([
                     dcc.Graph(figure=fig0, style=style),
-                ], style={'display': 'flex'}),
-                html.Div([
                     dcc.Graph(figure=fig1, style=style),
-                ], style={'display': 'flex'}),
+                ], style={'display': 'flex', 'height': '400px'}),
                 html.Div([
-                    dcc.Graph(figure=fig2, style=style),
+                    dcc.Graph(figure=fig2, style={'width': '80%'}),
                 ], style={'display': 'flex'})
             ]
 

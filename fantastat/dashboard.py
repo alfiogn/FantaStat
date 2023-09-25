@@ -75,7 +75,7 @@ class dashboard():
         self.ID_btn_backup = 'fantastat-btn-backup'
         self.ID_btn_export = 'fantastat-btn-export'
         # load database
-        self.db = self.SerieA.GetLastStats()
+        self.db = self.SerieA.GetLastStats(n0=self.lastDays - self.SerieA.Present.last_day, n1=self.lastDays)
 
         # auxiliary variables to update data
         # flag: top, semi-top, low cost, hype e hidden
@@ -456,8 +456,8 @@ class dashboard():
                 row_deletable=False,
                 selected_columns=[],
                 selected_rows=[],
-                # ASTA-CHANGE: delete Note from list
-                hidden_columns=['Rm', 'RM', 'Inf', 'Note'],
+                # ASTA-CHANGE: delete Note from list, add 'Inf'
+                hidden_columns=['Rm', 'RM', 'Note'],
                 # fixed_rows={'headers': True},
                 page_action="native",
                 page_current=0,

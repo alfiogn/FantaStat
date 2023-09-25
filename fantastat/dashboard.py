@@ -20,7 +20,7 @@ pio.templates.default = 'ggplot2'
 class dashboard():
     def __init__(self, y0, y1, q, s, v, sa,
                  prob=None, rig=None, approb=None, headless=True,
-                 last=None):
+                 last=None, update=False):
         self.year0 = y0
         self.year1 = y1
         self.nyears = y1 - y0 + 1
@@ -28,9 +28,9 @@ class dashboard():
         # update data
         browser = driver.driver(headless=headless)
         self.download_path = browser.download_path
-        utils.DownloadXLSX(browser, q, s, v)
+        utils.DownloadXLSX(browser, q, s, v, update=update)
         self.SerieA = championship.Archive(y0, y1, browser, sa, last=last,
-                                           prob=prob, rig=rig, approb=approb)
+                                           prob=prob, rig=rig, approb=approb, update=update)
         browser.quit()
 
         # dashboard creation
@@ -79,7 +79,7 @@ class dashboard():
 
         # auxiliary variables to update data
         # flag: top, semi-top, low cost, hype e hidden
-        self.cols_to_remember = ['Team', 'Flag', 'Note']
+        self.cols_to_remember = ['Team', 'Costo', 'Flag', 'Note']
         self.cols_to_data = ['Pg', 'Mv', 'Mf', 'Gf', 'Rigori', 'Ass', 'Malus']
         self.cols_to_barplot = ['Qt.A', 'FVM', 'Pg', 'Mv', 'Mf', 'Gf']
         self.cols_to_quant = self.cols_to_barplot[:-1]
@@ -137,8 +137,11 @@ class dashboard():
                 self.db = self.db.merge(notes, left_on=merge_cols, right_on=merge_cols, how='left')
                 col_preso = self.db.pop("Team")
                 self.db.insert(loc=0, column="Team", value=col_preso)
+                col_preso = self.db.pop("Costo")
+                self.db.insert(loc=1, column="Costo", value=col_preso)
         else:
             self.db.insert(loc=0, column='Team', value='')
+            self.db.insert(loc=1, column='Costo', value=0)
             for nc in self.cols_to_remember[1:]:
                 self.db[nc] = ''
 
@@ -254,19 +257,19 @@ class dashboard():
                     html.P("Flags: hype (Y), hidden (H), no (N); fasce (+-);"),
                     html.P("top (T), semi-top (ST), buono (B), low-cost (LC);")
                 ], style=obj_style(100)),
-                # Appunti vari
+                # ASTA-CHANGE: Appunti vari
                 dbc.Row([
-                    html.H6("Appunti", style={"font-weight": "bold"}),
-                    html.P("Miglior difesa", style={"font-weight": "bold"}),
-                    html.P("    2022 - Top: Napoli, Lazio, Juve, Roma;    Semi-top: Torino, Inter, Milan, Lecce;    Medi: Udinese, Empoli, Monza"),
-                    html.P("Corrente - Top: Inter, Juve, Lecce;    Semi-top: Napoli, Lazio, Atalanta;    Medi: Roma, Juve, Monza, Milan"),
-                    html.P("Commenti: nel 22, non si sono confermate Atalanta e Salernitana, ma hanno stupito Monza e Lazio (risp 21)"),
-                    html.P(""),
-                    html.P("Miglior attacco", style={"font-weight": "bold"}),
-                    html.P("    2022 - Top: Napoli, Inter, Atalanta, Milan, Lazio;    Semi-top: Juve, Fiorentina, Roma, Salernitana;    Medi: Udinese, Sassuolo"),
-                    html.P("Corrente - Top: Inter, Roma, Juve;    Semi-top: Milan, Sassuolo, Fiorentina, Napoli, Lecce;    Medi: ND"),
-                    html.P("Commenti: nel 22, non si è confermata Udinese, ma hanno stupito Lazio, Fiorentina, Sassuolo"),
-                    html.P("")
+                    html.H6("Appunti...", style={"font-weight": "bold"}),
+                #     html.P("Miglior difesa", style={"font-weight": "bold"}),
+                #     html.P("    2022 - Top: Napoli, Lazio, Juve, Roma;    Semi-top: Torino, Inter, Milan, Lecce;    Medi: Udinese, Empoli, Monza"),
+                #     html.P("Corrente - Top: Inter, Juve, Lecce;    Semi-top: Napoli, Lazio, Atalanta;    Medi: Roma, Juve, Monza, Milan"),
+                #     html.P("Commenti: nel 22, non si sono confermate Atalanta e Salernitana, ma hanno stupito Monza e Lazio (risp 21)"),
+                #     html.P(""),
+                #     html.P("Miglior attacco", style={"font-weight": "bold"}),
+                #     html.P("    2022 - Top: Napoli, Inter, Atalanta, Milan, Lazio;    Semi-top: Juve, Fiorentina, Roma, Salernitana;    Medi: Udinese, Sassuolo"),
+                #     html.P("Corrente - Top: Inter, Roma, Juve;    Semi-top: Milan, Sassuolo, Fiorentina, Napoli, Lecce;    Medi: ND"),
+                #     html.P("Commenti: nel 22, non si è confermata Udinese, ma hanno stupito Lazio, Fiorentina, Sassuolo"),
+                    # html.P("")
                 ], style=obj_style(100)),
             ], width=6),
             dbc.Col(
@@ -453,7 +456,8 @@ class dashboard():
                 row_deletable=False,
                 selected_columns=[],
                 selected_rows=[],
-                hidden_columns=['Rm', 'RM', 'Inf'],
+                # ASTA-CHANGE: delete Note from list
+                hidden_columns=['Rm', 'RM', 'Inf', 'Note'],
                 # fixed_rows={'headers': True},
                 page_action="native",
                 page_current=0,
@@ -527,11 +531,15 @@ class dashboard():
                             asta_team = self.db.loc[idx0, 'Team']
                             self.db.loc[idx0, 'Team'] = ''
                             data[idx]['Team'] = ''
+                            self.db.loc[idx0, 'Costo'] = 0
+                            data[idx]['Costo'] = 0
                             tmp_cost = self.Lega[asta_team][role].pop(asta_player)
                             print("Removing", asta_player, "("+str(tmp_cost)+") from asta_team "+asta_team)
                         elif asta_team is not None:
                             self.db.loc[idx0, 'Team'] = asta_team
                             data[idx]['Team'] = asta_team
+                            self.db.loc[idx0, 'Costo'] = asta_cost
+                            data[idx]['Costo'] = asta_cost
                             self.Lega[asta_team][role][asta_player] = asta_cost
                             print("Adding", asta_player, "("+str(asta_cost)+") to asta_team "+asta_team)
 
@@ -792,7 +800,7 @@ class dashboard():
             recapsheet.write_string(6+i, 2, 'Fascia '+str(i+1))
             markcells(recapsheet, [6+i-1], 2, c=i)
 
-        writer.save()
+        writer.close()
 
 
 

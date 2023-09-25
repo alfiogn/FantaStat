@@ -11,6 +11,7 @@ import os, re, pdb, unicodedata, time, glob
 import pickle
 from difflib import get_close_matches
 
+CURRENT_YEAR = 23
 NTEAMS = 20
 NDAYS = 38
 NAMES_REGEX = "([A-Z][a-z']*[A-Z][a-z]*|[A-Z][a-z]* [A-Z][a-z]*|[A-Z][a-z]*)/([A-Z][a-z']*[A-Z][a-z]*|[A-Z][a-z]* [A-Z][a-z]*|[A-Z][a-z]*)?"
@@ -46,7 +47,7 @@ def MatchPlayerList(n, t, db):
 
 
 class championship():
-    def __init__(self, y, b, url, prefix, present=False):
+    def __init__(self, y, b, url, prefix, present=False, update=False):
         self.map = lambda x: np.array(
             x.replace('[', '').replace(']', '').replace(',', '').split(),
             dtype=int)
@@ -61,7 +62,7 @@ class championship():
         self.filebase = prefix + '20' + str(y) + '.csv'
         self.file = '/'.join([b.download_path, self.filebase])
         self.last_day = NDAYS
-        if b.CheckData(self.filebase):
+        if b.CheckData(self.filebase) or not (update and self.year == CURRENT_YEAR):
             if not b.CheckTimeStamp(self.filebase, days=2) or not present:
                 self.db = pd.read_csv(self.file).map(self.map)
                 self.last_day = self.db.shape[0]
@@ -187,7 +188,7 @@ class championship():
 
 class PlayersList():
     def __init__(self, b, y, prob=None, rig=None, approb=None, backup=None,
-                 prefix='quotazioni', stat='statistiche', offset=0):
+                 prefix='quotazioni', stat='statistiche', offset=0, update=False):
         self.year = y
         self.browser = b
         self.proburl = prob
@@ -208,7 +209,7 @@ class PlayersList():
             self.backupfilebase = 'backup_players_'+'20'+str(y)+'_'+backup+'.pickle'
         self.backupfile = '/'.join([b.download_path, self.backupfilebase])
         self.Loaded = False
-        if b.CheckData(self.backupfilebase):
+        if b.CheckData(self.backupfilebase) or not (update and self.year == CURRENT_YEAR):
             if not b.CheckTimeStamp(self.backupfilebase, days=2):
                 with open(self.backupfile, 'rb') as f:
                     self.db = pd.read_pickle(f)
@@ -304,7 +305,7 @@ class PlayersList():
                 if i not in teams:
                     self.newteams += [i]
 
-        df.rename(columns={'Pv':'Pg', 'Fm':'Mf'}, inplace=True)
+        df.rename(columns={'Pv':'Pg', 'Fm':'Mf', 'Rm':'RM'}, inplace=True)
 
         df1 = fdb.merge(df, left_on=['Nome'], right_on=['Nome'], suffixes=("", "_y"), how='left')
         df1.drop(columns=['Id', 'Id_y', 'R_y', 'Squadra_y'], inplace=True)
@@ -466,7 +467,7 @@ class PlayersList():
 
 
 class Archive():
-    def __init__(self, y0, y1, b, url, last=None, prob=None, rig=None, approb=None, prefix='archivio'):
+    def __init__(self, y0, y1, b, url, last=None, prob=None, rig=None, approb=None, prefix='archivio', update=False):
         self.year0 = y0
         self.year1 = y1
         self.url = url
@@ -488,29 +489,29 @@ class Archive():
         self.LastPlayersFiles = None
         self.LastPlayers = None
         self.last_loaded = False
-        if os.path.isfile(self.backup_last):
+        if os.path.isfile(self.backup_last) or not update:
             with open(self.backup_last, 'rb') as f:
                 self.LastPlayersFiles, self.LastPlayers = pd.read_pickle(f)
                 self.last_loaded = True
         self.LastStats = {}
         self.PlayerStory = {}
 
-        self.GetInfo()
+        self.GetInfo(update)
 
-    def GetStory(self):
+    def GetStory(self, update):
         for i in range(self.year0, self.year1+1):
             self.Story += [championship(i, self.browser, self.url, self.prefix)]
-        self.Present = championship(self.year1+1, self.browser, self.url, self.prefix, present=True)
+        self.Present = championship(self.year1+1, self.browser, self.url, self.prefix, present=True, update=update)
 
-    def GetPlayers(self):
+    def GetPlayers(self, update):
         for i in range(self.year0, self.year1+1):
             self.Players += [PlayersList(self.browser, i)]
         self.PresentPlayersAndStats = \
                 PlayersList(self.browser, self.year1+1, approb=self.approburl,
-                            backup='stats', prob=self.proburl, rig=self.rigurl)
+                            backup='stats', prob=self.proburl, rig=self.rigurl, update=update)
         self.PresentTeams = self.PresentPlayersAndStats.db['Squadra'].unique()
 
-    def PresentGetLastNDays(self, n):
+    def PresentGetLastNDays(self, n, update):
         from .utils import voti_prefix
         files = []
         offset = 1
@@ -522,7 +523,7 @@ class Archive():
 
         files = files[:n]
 
-        if self.LastPlayers is not None and (self.last_loaded and files[0] in self.LastPlayersFiles):
+        if self.LastPlayers is not None and (self.last_loaded and files[0] in self.LastPlayersFiles) or update:
             return None
 
         self.LastPlayersFiles = files
@@ -633,16 +634,16 @@ class Archive():
 
         return self.PlayerStory[self.LastKey(n0, n1)]
 
-    def GetInfo(self):
+    def GetInfo(self, update):
         print("Retrieve archive data:")
-        self.GetStory()
+        self.GetStory(update)
         print("    - players")
-        self.GetPlayers()
+        self.GetPlayers(update)
         print("    - last days")
-        self.PresentGetLastNDays(self.LastDays)
+        self.PresentGetLastNDays(self.LastDays, update)
         if self.PresentPlayersAndStats.db.shape[0] != self.LastPlayers[0].shape[0]:
             self.LastPlayers = None
-            self.PresentGetLastNDays(self.LastDays)
+            self.PresentGetLastNDays(self.LastDays, update)
 
         # print("    - initialize last days combination")
         # for i in range(self.LastDays - 1):

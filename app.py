@@ -1,13 +1,18 @@
 import os, sys, pickle
 from fantastat.dashboard import dashboard
+from fantastat.championship import CURRENT_YEAR
 import pandas as pd
 import numpy as np
 
 import argparse
 
 parser = argparse.ArgumentParser(description='Open FantaStat dashboard.')
+parser.add_argument('--update', dest='update', action='store_true', help='trigger update of marks, results and priorities')
 parser.add_argument('--db-to-csv', dest='tocsv', help='pandas (in pickle) database to be converted to csv')
 parser.add_argument('--csv-to-db', dest='todb', help='csv to be converted into pandas (in pickle)')
+parser.add_argument('--last-to-load', dest='lastdays', help='last days to load')
+parser.set_defaults(update=False)
+parser.set_defaults(lastdays='20')
 
 args = parser.parse_args()
 
@@ -37,9 +42,9 @@ statistiche = lambda y: 'https://www.fantacalcio.it/statistiche-serie-a/20'+str(
 quotazioni = lambda y: 'https://www.fantacalcio.it/quotazioni-fantacalcio/20'+str(y)
 seriea = 'https://www.legaseriea.it/it/serie-a'
 
-db = dashboard(15, 22, quotazioni, statistiche, voti, seriea,
-               prob=probabili_formazioni, rig=rigoristi, last=20,
-               approb=probabili_formazioni_2324)
+db = dashboard(15, CURRENT_YEAR - 1, quotazioni, statistiche, voti, seriea,
+               prob=probabili_formazioni, rig=rigoristi, last=int(args.lastdays),
+               approb=probabili_formazioni_2324, update=args.update)
 # NOTE: Set headless=False to see what Firefox does
 
 if __name__ == '__main__':

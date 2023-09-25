@@ -2,6 +2,10 @@ body {
   background-color: rgb(255, 255, 255);
 }
 
+#fantastat-datatable {
+  margin-right: 5%;
+}
+
 #fantastat-list-howmanydays .rc-slider-dot {
   border-color: gray;
   background-color: pink;

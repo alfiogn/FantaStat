@@ -52,6 +52,7 @@ class driver(Firefox):
             els[0].click()
 
     def CookiesAccept(self):
+        time.sleep(1)
         try:
             self.WaitClick("//button[contains(., 'ACCETTO')]")
         except:

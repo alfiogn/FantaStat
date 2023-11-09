@@ -238,26 +238,29 @@ class PlayersList():
                                         'prob_form_20'+str(self.year)+'_'+str(day)+'.pickle']), 'wb') as f:
                         pickle.dump(self.db[['Nome', 'Squadra', 'N.Tit', 'N.Sos']], f)
                     iidx = np.zeros(self.db.shape[0], dtype=int)
+                    offset_day = 0
                     for i in range(day, 0, -1):
-                        dfi = pd.read_pickle(
-                            open('/'.join([self.browser.download_path,
-                                           'prob_form_20'+str(self.year)+'_'+str(i)+'.pickle']), 'rb'),
-                        )
-                        for i in range(self.db.shape[0]):
-                            ii = np.where(self.db['Nome'].values[i] == dfi['Nome'].values)[0]
-                            if len(ii) == 0:
-                                continue
-                            else:
-                                ii = ii[0]
-                            if dfi['N.Tit'].values[ii] != '':
-                                iidx[i] += int(dfi['N.Tit'].values[ii])
-                            else:
-                                iidx[i] += 3
-                                # if dfi['N.Sos'].values[ii] != '':
-                                #     self.db.loc[i, 'N.Sos'] += ',' + dfi['N.Sos'].values[ii]
+                        fname_day = '/'.join([self.browser.download_path,
+                                              'prob_form_20'+str(self.year)+'_'+str(i)+'.pickle'])
+                        if os.path.isfile(fname_day):
+                            dfi = pd.read_pickle(open(fname_day, 'rb'))
+                            for i in range(self.db.shape[0]):
+                                ii = np.where(self.db['Nome'].values[i] == dfi['Nome'].values)[0]
+                                if len(ii) == 0:
+                                    continue
+                                else:
+                                    ii = ii[0]
+                                if dfi['N.Tit'].values[ii] != '':
+                                    iidx[i] += int(dfi['N.Tit'].values[ii])
+                                else:
+                                    iidx[i] += 3
+                                    # if dfi['N.Sos'].values[ii] != '':
+                                    #     self.db.loc[i, 'N.Sos'] += ',' + dfi['N.Sos'].values[ii]
+                        else:
+                            offset_day += 1
 
-                    self.db['N.Tit'] = np.round(iidx/day, 1)
-                    self.db['N.Tit'].values[iidx/day > 2.99] = 0
+                    self.db['N.Tit'] = np.round(iidx/(day - offset_day), 1)
+                    self.db['N.Tit'].values[iidx/(day - offset_day) > 2.99] = 0
 
             if self.rigurl is not None:
                 self.GetPenalties(self.rigurl)
@@ -399,6 +402,9 @@ class PlayersList():
                             if lll[k] == 'da' and lll[k+1] == 'valutare':
                                 injre += [' '.join(lll[k:])]
                                 break
+                            if lll[k] == 'stagione':
+                                injre += [' '.join(lll[k:])]
+                                break
                             if lll[k] == 'in' and lll[k+1] == 'dubbio':
                                 injre += [' '.join(lll[k:])]
                                 break
@@ -523,7 +529,7 @@ class Archive():
 
         files = files[:n]
 
-        if self.LastPlayers is not None and (self.last_loaded and files[0] in self.LastPlayersFiles) or update:
+        if self.LastPlayers is not None and (self.last_loaded and files[0] in self.LastPlayersFiles) or not update:
             return None
 
         self.LastPlayersFiles = files

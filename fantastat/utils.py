@@ -7,6 +7,10 @@ from PyQt5.QtWidgets import QApplication
 from selenium.webdriver.common.by import By
 from .championship import CURRENT_YEAR
 
+sys_browser = 'firefox'
+if os.name == 'nt':
+    sys_browser = 'edge'
+
 quot_prefix = lambda i: 'quotazioni' + '20' + str(i)
 stat_prefix = lambda i: 'statistiche' + '20' + str(i)
 voti_prefix = lambda i,j: 'voti' + '20' + str(i) + '_' + str(j)
@@ -27,17 +31,23 @@ def ShowFig(fig, name):
 
 def Setup():
     home = os.getenv('HOME')
+    if home is None:
+        home = os.getenv('HOMEPATH')
     # pwd = os.path.dirname(os.path.abspath(__file__))
     pwd = os.getcwd()
     print("\nWorking directory to", pwd)
     os.chdir(pwd)
-    profile_path = '/'.join([home, '.mozilla/firefox/7en4ks3y.default-release'])
-    firefox = '/'.join([pwd, 'fantastat/geckodriver'])
+    exe_browser = None
+    if sys_browser == 'firefox':
+        exe_browser = '/'.join([pwd, 'fantastat/geckodriver'])
+        exe_browser = '/'.join([pwd, 'fantastat\geckodriver.exe'])
+    elif sys_browser == 'edge':
+        exe_browser = '\\'.join([pwd, 'fantastat\msedgedriver.exe'])
 
     user = os.environ['USER']
     password = os.environ['PASSWORD']
 
-    return profile_path, firefox, user, password
+    return exe_browser, user, password
 
 def DownloadXLSX(b, q, s, v, update=False):
     ext = '.xlsx'

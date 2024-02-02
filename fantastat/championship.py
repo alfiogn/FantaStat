@@ -89,6 +89,7 @@ class championship():
     def ScrapAll(self):
         self.browser.get(self.url)
         self.browser.Click("//button[contains(., 'Accetta')]")
+        # self.browser.find_elements(By.XPATH, "//i[contains(., 'close')]")[0].close()
         y = None
         count = 0
         while y is None and count < 15:
@@ -109,15 +110,26 @@ class championship():
         bdays = []
         time.sleep(2)
         count = 0
+        # self.browser.fullscreen_window()
         while len(bdays) == 0 and count < 15:
             time.sleep(0.25)
             bdays = self.browser.find_elements(By.XPATH, "//option[contains(., 'Giornata')]")
+            filters = None
+            if bdays[1].text == '':
+                filters = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon hm-button-filter']")[0]
             count += 1
         for i in range(NDAYS):
             if i > (len(bdays) - 1):
                 RuntimeWarning("Day %d of year %d missing" % (i + 1, self.year))
                 continue
-            bdays[i].click()
+            if filters is not None:
+                filters.click()
+                btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
+                btns[1].click()
+                daybtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'Giornata')]")[i]
+                daybtn.click()
+            else:
+                bdays[i].click()
             time.sleep(1.0)
             home_out = self.ScrapDay()
 

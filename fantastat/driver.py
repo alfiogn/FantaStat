@@ -1,11 +1,16 @@
 from selenium.webdriver import Firefox
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.firefox.service import Service as FireService
+from selenium.webdriver.firefox.options import Options as FireOptions
+
+from selenium.webdriver import Edge
+from selenium.webdriver.edge.service import Service as EdgeService
+from selenium.webdriver.edge.options import Options as EdgeOptions
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
+
+# from msedge.selenium_tools import Edge, EdgeService, EdgeOptions
 
 import os, glob, pickle, time, pdb
 
@@ -13,25 +18,42 @@ from . import utils
 
 FANTASTAT_PATH = os.path.dirname(os.path.abspath(__file__))
 HOME = os.getenv('HOME')
+if HOME is None:
+    HOME = os.getenv('HOMEPATH')
 
-class driver(Firefox):
-    def __init__(self, profile=False, load_cookies=False, headless=True):
-        profile_path, exe, self.user, self.password = utils.Setup()
+sys_browser = 'firefox'
+if os.name == 'nt':
+    sys_browser = 'edge'
+
+class driver(Edge):
+    def __init__(self, load_cookies=False, headless=True):
+        exe, self.user, self.password = utils.Setup()
         self.login_done = False
-        options = Options()
-        options._profile = None
+        options = None
         self.download_path = './data'
         if not os.path.exists(self.download_path):
             os.mkdir(self.download_path)
-        options.set_preference("browser.download.folderList", 2)
-        options.set_preference("browser.download.dir", self.download_path)
-        if profile:
-            options._profile = FirefoxProfile(profile_path)
+        if sys_browser == 'firefox':
+            options = FireOptions()
+            options._profile = None
+            options.set_preference("browser.download.folderList", 2)
+            options.set_preference("browser.download.dir", self.download_path)
+        elif sys_browser == 'edge':
+            options = EdgeOptions()
+            options.use_chromium = True
+            data_fld = "C:\\Users\\" + os.getenv("HOSTNAME") + "\\AppData\\Local\\Microsoft\\Edge\\User Data"
+            options.add_argument("--user-data-dir=" + data_fld + "1")
+            options.add_argument("--enable-chrome-browser-cloud-management")
+            options.add_argument("--window-size=1024,768")
+            options.add_argument("--start-maximized")
         if headless:
             options.headless = True
         self.options = options
-        log_path = '/'.join([FANTASTAT_PATH, 'geckodriver.log'])
-        service = Service(exe, log_path=log_path)
+        service = None
+        if sys_browser == 'firefox':
+            service = FireService(exe)
+        elif sys_browser == 'edge':
+            service = EdgeService(exe)
         super().__init__(service=service, options=options)
 
     def Get(self, url):
@@ -59,7 +81,7 @@ class driver(Firefox):
             time.sleep(0.1)
             print("Warning! No cookies found 0")
         try:
-            self.WaitClick("//button[contains(., 'No, voglio perdere!')]")
+            self.WaitClick("//div[contains(., 'No, voglio perdere!')]", t=2)
         except:
             time.sleep(0.1)
             print("Warning! No cookies found 1")
@@ -71,21 +93,28 @@ class driver(Firefox):
         # find user button
         self.WaitClick("/html/body/main/header/nav[1]/ul/li[8]/button")
         # go to login page
-        self.WaitClick("//a[@href='/login']")
+        xp = "//a[@href='/login']"
+        els = self.find_elements(By.XPATH, xp)
+        if len(els) > 0:
+            if els[0].text != '':
+                self.WaitClick(xp)
+                # perform login
+                username = self.find_element(By.XPATH, "//input[@name='username']")
+                password = self.find_element(By.XPATH, "//input[@name='password']")
+                username.send_keys(self.user)
+                password.send_keys(self.password)
+                self.WaitClick("//button[contains(., 'Login')]", t=0)
 
-        # perform login
-        username = self.find_element(By.XPATH, "//input[@name='username']")
-        password = self.find_element(By.XPATH, "//input[@name='password']")
-        username.send_keys(self.user)
-        password.send_keys(self.password)
-        self.WaitClick("//button[contains(., 'Login')]", t=0)
         self.login_done = True
 
     def StoreDownload(self, file, filename=None):
         if filename is None:
-            os.rename(file, '/'.join([self.download_path, file.split('/')[-1]]))
-        else:
-            os.rename(file, '/'.join([self.download_path, filename]))
+            filename = file.split('/')[-1]
+
+        filename = '/'.join([self.download_path, filename])
+        if os.path.isfile(filename):
+            os.remove(filename)
+        os.rename(file, filename)
 
     def CheckData(self, file):
         return os.path.isfile('/'.join([self.download_path, file]))
@@ -98,17 +127,19 @@ class driver(Firefox):
     def Download(self, url, prefix=None):
         self.Get(url)
         self.Click("//a[contains(@href, 'Excel')]")
-        fileext = "part"
+        fileext = ""
         latest_file = ""
-        while "part" == fileext:
+        while "crdownload" not in fileext:
             time.sleep(0.1)
             files = glob.glob('/'.join([HOME, 'Downloads', '*.*']))
             if len(files) > 0:
                 latest_file = max(files, key=os.path.getmtime)
-                ext = latest_file.split('/')[-1].split('.')[-1]
-                fileext = ext
+                exts = latest_file.split('/')[-1].split('.')
+                fileext = exts[-1]
 
-        self.StoreDownload(latest_file, filename='.'.join([prefix, ext]))
+        os.rename(latest_file, latest_file.replace('.crdownload', ''))
+        self.StoreDownload(latest_file.replace('.crdownload', ''), filename='.'.join([prefix, exts[-2]]))
+
 
 
 

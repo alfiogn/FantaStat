@@ -44,7 +44,7 @@ seriea = 'https://www.legaseriea.it/it/serie-a'
 
 db = dashboard(15, CURRENT_YEAR - 1, quotazioni, statistiche, voti, seriea,
                prob=probabili_formazioni, rig=rigoristi, last=int(args.lastdays),
-               approb=probabili_formazioni_2324, update=args.update)
+               approb=probabili_formazioni_2324, update=args.update, headless=False)
 # NOTE: Set headless=False to see what Firefox does
 
 if __name__ == '__main__':

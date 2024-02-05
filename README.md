@@ -6,7 +6,8 @@ FantaStat is a plotly dashboard to analyse fanta-football data to prepare the au
 ## Run
 
 You have first to set your username and password of [Fantacalcio](https://www.fantacalcio.it/)
-as environmental variables `USERNAME` and `PASSWORD`. Then you can run the command
+as environmental variables `USERNAME` and `PASSWORD` (through a `bashrc` or a `profile.ps1`).
+Then you can run the command
 ```
 python app.py
 ```

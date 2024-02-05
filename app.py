@@ -33,7 +33,9 @@ if (args.tocsv is not None) ^ (args.todb is not None):
         pickle.dump(db, open(newfile, 'wb'))
 
 
-probabili_formazioni_2324 = 'https://www.fantacalcio.it/news/calcio-italia/05_08_2023/calciomercato-come-cambia-la-serie-a-2023-24-le-probabili-formazioni-446506'
+#### Infografiche
+# probabili_formazioni_2324 = 'https://www.fantacalcio.it/news/calcio-italia/05_08_2023/calciomercato-come-cambia-la-serie-a-2023-24-le-probabili-formazioni-446506'
+probabili_formazioni_2324 = 'https://www.fantacalcio.it/news/calcio-italia/01_02_2024/calciomercato-serie-a-probabili-formazioni-455658'
 rigoristi = 'https://www.fantacalcio.it/rigoristi-serie-a'
 probabili_formazioni = 'https://www.fantacalcio.it/probabili-formazioni-serie-a'
 

@@ -14,7 +14,8 @@ from difflib import get_close_matches
 CURRENT_YEAR = 23
 NTEAMS = 20
 NDAYS = 38
-NAMES_REGEX = "([A-Z][a-z']*[A-Z][a-z]*|[A-Z][a-z]* [A-Z][a-z]*|[A-Z][a-z]*)/([A-Z][a-z']*[A-Z][a-z]*|[A-Z][a-z]* [A-Z][a-z]*|[A-Z][a-z]*)?"
+various_names = '|'.join(["[A-Z]\\. [A-Z][a-z]*", "[A-Z][a-z']*[A-Z][a-z]*", "[A-Z][a-z]* [A-Z][a-z]*", "[A-Z][a-z]*"])
+NAMES_REGEX = "(%s)/(%s)?" % (various_names, various_names)
 
 def ReadExcel(f, **kwargs):
     print("Opening file ", f)
@@ -52,6 +53,7 @@ class championship():
             x.replace('[', '').replace(']', '').replace(',', '').split(),
             dtype=int)
         self.year = y
+        self.update = update
         self.url = url
         self.db = None
         self.toRead = True
@@ -77,18 +79,27 @@ class championship():
         out = self.browser.find_elements(By.XPATH, "//div[contains(@class, 'hm-name-team away')]")
         data = np.empty((len(home), 4), dtype='<U20')
         for i in range(len(home)):
-            data[i, 0] = home[i].text
-            data[i, 2] = out[i].text
+            data[i, 0] = home[i].text.split('\n')[0]
+            data[i, 2] = out[i].text.split('\n')[0]
         count = 0
-        for i in range(len(scores)):
-            if re.match(re.compile('[0-9]-[0-9]'), scores[i].text):
-                data[count, [1, 3]] = scores[i].text.split('-')
+        if len(scores) > 29:  # not the best hard-coded but should work
+            for i in range(len(home)):
+                data[count, [1, 3]] = [scores[3*i].text, scores[3*i + 2].text]
                 count += 1
+        else:
+            for i in range(len(scores)):
+                if re.match(re.compile('[0-9]-[0-9]'), scores[i].text):
+                    data[count, [1, 3]] = scores[i].text.split('-')
+                    count += 1
         return data
 
     def ScrapAll(self):
         self.browser.get(self.url)
         self.browser.Click("//button[contains(., 'Accetta')]")
+        try:
+            self.browser.Click('//*[@id="main"]/div[6]/div/div[1]/div/div/i')
+        except:
+            print("No video")
         # self.browser.find_elements(By.XPATH, "//i[contains(., 'close')]")[0].close()
         y = None
         count = 0
@@ -110,7 +121,6 @@ class championship():
         bdays = []
         time.sleep(2)
         count = 0
-        # self.browser.fullscreen_window()
         while len(bdays) == 0 and count < 15:
             time.sleep(0.25)
             bdays = self.browser.find_elements(By.XPATH, "//option[contains(., 'Giornata')]")
@@ -126,8 +136,9 @@ class championship():
                 filters.click()
                 btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
                 btns[1].click()
-                daybtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'Giornata')]")[i]
+                daybtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'Giornata')]")[i + 3]
                 daybtn.click()
+                self.browser.find_elements(By.XPATH, '//*[@id="main"]/div[4]/div[1]/div[1]/div[3]/div[3]/button')[0].click()
             else:
                 bdays[i].click()
             time.sleep(1.0)
@@ -140,7 +151,6 @@ class championship():
                 teams.sort()
                 df.columns = teams
 
-            # pdb.set_trace()
             if np.all(home_out[:, 1] == ''):
                 df = df.iloc[:i, :]
                 self.last_day = i + 1
@@ -417,12 +427,12 @@ class PlayersList():
                             if lll[k] == 'stagione':
                                 injre += [' '.join(lll[k:])]
                                 break
-                            if lll[k] == 'in' and lll[k+1] == 'dubbio':
+                            if (lll[k] == 'in' and lll[k+1] == 'dubbio') or \
+                               (lll[k] == 'in' and lll[k+1] == 'forte' and lll[k+2] == 'dubbio'):
                                 injre += [' '.join(lll[k:])]
                                 break
                     if len(injpl) != len(injre):
                         print("Length of", injpl, "different from", injre, "\nfrom:", injreason)
-                        # pdb.set_trace()
                     subIdx(injpl, team, 'Inf', injre)
                 # h_sq = h_susp.text.split('\n')
 
@@ -593,6 +603,8 @@ class Archive():
             self.LastStats[self.LastKey(n0, n1)] = self.PresentPlayersAndStats.db.copy()
             dbn = self.LastStats[self.LastKey(n0, n1)]
             dbn.loc[:, cols] = 0
+            if self.LastPlayers is None:
+                self.PresentGetLastNDays(self.LastDays, True)
             ndays = self.LastPlayers[0]['Pg'].values*0.0 + 1e-10
             for dbi in self.LastPlayers[::-1][(n0 - 1):n1]:
                 dbn['Pg'] += dbi['Pg']

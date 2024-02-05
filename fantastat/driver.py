@@ -8,12 +8,9 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import WebDriverException
 
-
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
-
-# from msedge.selenium_tools import Edge, EdgeService, EdgeOptions
 
 import os, glob, pickle, time, pdb
 
@@ -44,7 +41,8 @@ class driver(webdriver.Edge):
             if headless:
                 options.headless = True
         elif sys_browser == 'edge':
-            data_fld = "C:\\Users\\" + os.getenv("HOSTNAME") + "\\AppData\\Local\\Microsoft\\Edge\\User Data1"
+            # C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
+            data_fld = "C:\\Users\\" + os.getenv("HOSTNAME") + "\\AppData\\Local\\Microsoft\\Edge\\Profile1"
             options = webdriver.EdgeOptions()
             options.use_chromium = True
             options.add_argument('log-level=3')
@@ -62,7 +60,7 @@ class driver(webdriver.Edge):
             })
             options.add_experimental_option("excludeSwitches", ["enable-logging"])
             if headless:
-                options.add_argument("headless=new")
+                options.add_argument("--headless")
         self.options = options
         service = None
         if sys_browser == 'firefox':
@@ -70,7 +68,7 @@ class driver(webdriver.Edge):
             super().__init__(service=service, options=self.options)
         elif sys_browser == 'edge':
             service = EdgeService(exe)
-            super().__init__(service=service, options=self.options)
+            super().__init__(service=service, options=self.options, keep_alive=True)
 
     def Get(self, url):
         if not self.login_done:
@@ -97,18 +95,18 @@ class driver(webdriver.Edge):
             time.sleep(0.1)
             print("Warning! No cookies found 0")
         try:
-            self.WaitClick("//div[contains(., 'No, voglio perdere!')]", t=2)
+            self.WaitClick('//*[@id="pushengage-opt-in-6-close"]', t=2)
         except:
             time.sleep(0.1)
             print("Warning! No cookies found 1")
 
     def FantaLogin(self, url='https://www.fantacalcio.it/'):
         self.get(url)
-        self.maximize_window()
+        # self.maximize_window()
         print("Login to fantacalcio.it", end=" --> ")
         self.CookiesAccept()
         # find user button
-        self.WaitClick("/html/body/main/header/nav[1]/ul/li[8]/button")
+        self.WaitClick('//*[@id="main-header"]/nav[1]/ul/li[8]/button')
         # go to login page
         xp = "//a[@href='/login']"
         els = self.find_elements(By.XPATH, xp)
@@ -116,11 +114,11 @@ class driver(webdriver.Edge):
             if els[0].text != '':
                 self.WaitClick(xp)
                 # perform login
-                username = self.find_element(By.XPATH, "//input[@name='username']")
-                password = self.find_element(By.XPATH, "//input[@name='password']")
+                username = self.find_element(By.XPATH, '//*[@id="loginForm"]/div[1]/input')
+                password = self.find_element(By.XPATH, '//*[@id="loginForm"]/div[2]/input')
                 username.send_keys(self.user)
                 password.send_keys(self.password)
-                self.WaitClick("//button[contains(., 'Login')]", t=0)
+                self.WaitClick('//*[@id="loginForm"]/button', t=0.1)
 
         self.login_done = True
 
@@ -153,6 +151,7 @@ class driver(webdriver.Edge):
                 latest_file = max(files, key=os.path.getmtime)
                 exts = latest_file.split('/')[-1].split('.')
                 fileext = exts[-1]
+        time.sleep(1)
 
         os.rename(latest_file, latest_file.replace('.crdownload', ''))
         self.StoreDownload(latest_file.replace('.crdownload', ''), filename='.'.join([prefix, exts[-2]]))

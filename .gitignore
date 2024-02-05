@@ -9,6 +9,7 @@ profile.ps1
 data/
 my_asta_notes.csv
 __*.vim
+.*.sw*
 *.log
 .~lock.*
 __flaskcache__

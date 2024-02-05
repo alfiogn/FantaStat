@@ -2,9 +2,12 @@ from selenium.webdriver import Firefox
 from selenium.webdriver.firefox.service import Service as FireService
 from selenium.webdriver.firefox.options import Options as FireOptions
 
-from selenium.webdriver import Edge
 from selenium.webdriver.edge.service import Service as EdgeService
-from selenium.webdriver.edge.options import Options as EdgeOptions
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import WebDriverException
+
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
@@ -25,7 +28,7 @@ sys_browser = 'firefox'
 if os.name == 'nt':
     sys_browser = 'edge'
 
-class driver(Edge):
+class driver(webdriver.Edge):
     def __init__(self, load_cookies=False, headless=True):
         exe, self.user, self.password = utils.Setup()
         self.login_done = False
@@ -38,23 +41,36 @@ class driver(Edge):
             options._profile = None
             options.set_preference("browser.download.folderList", 2)
             options.set_preference("browser.download.dir", self.download_path)
+            if headless:
+                options.headless = True
         elif sys_browser == 'edge':
-            options = EdgeOptions()
+            data_fld = "C:\\Users\\" + os.getenv("HOSTNAME") + "\\AppData\\Local\\Microsoft\\Edge\\User Data1"
+            options = webdriver.EdgeOptions()
             options.use_chromium = True
-            data_fld = "C:\\Users\\" + os.getenv("HOSTNAME") + "\\AppData\\Local\\Microsoft\\Edge\\User Data"
-            options.add_argument("--user-data-dir=" + data_fld + "1")
-            options.add_argument("--enable-chrome-browser-cloud-management")
-            options.add_argument("--window-size=1024,768")
-            options.add_argument("--start-maximized")
-        if headless:
-            options.headless = True
+            options.add_argument('log-level=3')
+            # options.add_argument('--disable-gpu')
+            # options.add_argument('--profile-directory=User Data1')
+            options.add_argument('--disable-software-rasterizer')
+            options.add_argument('--user-data-dir=' + data_fld)
+            options.add_experimental_option('prefs', {
+                        'download.default_directory': self.download_path,
+                        'download.prompt_for_download': False,
+                        'download.directory_upgrade': True,
+                        'safebrowsing.enabled': True,
+                        'profile.default_content_settings.popups': False,
+                        'download.default_content_setting_values.automatic_downloads': 1,
+            })
+            options.add_experimental_option("excludeSwitches", ["enable-logging"])
+            if headless:
+                options.add_argument("headless=new")
         self.options = options
         service = None
         if sys_browser == 'firefox':
             service = FireService(exe)
+            super().__init__(service=service, options=self.options)
         elif sys_browser == 'edge':
             service = EdgeService(exe)
-        super().__init__(service=service, options=options)
+            super().__init__(service=service, options=self.options)
 
     def Get(self, url):
         if not self.login_done:
@@ -88,6 +104,7 @@ class driver(Edge):
 
     def FantaLogin(self, url='https://www.fantacalcio.it/'):
         self.get(url)
+        self.maximize_window()
         print("Login to fantacalcio.it", end=" --> ")
         self.CookiesAccept()
         # find user button

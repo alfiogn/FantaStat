@@ -368,7 +368,7 @@ class dashboard():
             {
                 'if': {
                     'filter_query': '{{Inf}} != ""'.format(db.loc[index, :]),
-                    'column_id': ['Team', 'R', 'RM', 'Nome']
+                    'column_id': ['Team', 'R', 'RM', 'RM_y', 'Nome']
                 },
                 'backgroundColor': inj_color
             } for index in range(db.shape[0])
@@ -457,7 +457,7 @@ class dashboard():
                 selected_columns=[],
                 selected_rows=[],
                 # ASTA-CHANGE: delete Note from list, add 'Inf'
-                hidden_columns=['Rm', 'RM', 'Note'],
+                hidden_columns=['Rm', 'RM', 'RM_y', 'Note'],
                 # fixed_rows={'headers': True},
                 page_action="native",
                 page_current=0,

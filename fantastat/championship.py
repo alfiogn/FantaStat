@@ -231,8 +231,8 @@ class PlayersList():
             self.backupfilebase = 'backup_players_'+'20'+str(y)+'_'+backup+'.pickle'
         self.backupfile = '/'.join([b.download_path, self.backupfilebase])
         self.Loaded = False
-        if b.CheckData(self.backupfilebase) or not (update and self.year == CURRENT_YEAR):
-            if not b.CheckTimeStamp(self.backupfilebase, days=2):
+        if b.CheckData(self.backupfile) or (update and self.year == CURRENT_YEAR):
+            if not b.CheckTimeStamp(self.backupfile, days=2):
                 with open(self.backupfile, 'rb') as f:
                     self.db = pd.read_pickle(f)
                     self.Loaded = True
@@ -607,7 +607,6 @@ class Archive():
                 self.PresentGetLastNDays(self.LastDays, True)
             ndays = self.LastPlayers[0]['Pg'].values*0.0 + 1e-10
             for dbi in self.LastPlayers[::-1][(n0 - 1):n1]:
-                dbn['Pg'] += dbi['Pg']
                 ndays += dbi['Pg'].values
                 idx = dbi['Pg'] > 0
                 dbn.loc[idx, 'Mv']     += dbi.loc[idx, 'Mv']
@@ -616,6 +615,7 @@ class Archive():
                 dbn.loc[idx, 'Rigori'] += dbi.loc[idx, 'Rigori']
                 dbn.loc[idx, 'Ass']    += dbi.loc[idx, 'Ass']
                 dbn.loc[idx, 'Malus']  += dbi.loc[idx, 'Malus']
+            dbn['Pg'] = np.int64(ndays)
             dbn['Mv'] = np.round(dbn['Mv'].values/ndays, 2)
             dbn['Mf'] = np.round(dbn['Mf'].values/ndays, 2)
 

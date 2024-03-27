@@ -135,9 +135,12 @@ class driver(webdriver.Edge):
         return os.path.isfile('/'.join([self.download_path, file]))
 
     def CheckTimeStamp(self, file, days=1):
-        # return yes if time stamp is more than `days`
-        filetime = os.path.getmtime('/'.join([self.download_path, file]))
-        return ((time.time() - filetime) / 3600 > 24*days)
+        if self.CheckData(file):
+            # return yes if time stamp is more than `days`
+            filetime = os.path.getmtime('/'.join([self.download_path, file]))
+            return ((time.time() - filetime) / 3600 > 24*days)
+        else:
+            return False
 
     def Download(self, url, prefix=None):
         self.Get(url)

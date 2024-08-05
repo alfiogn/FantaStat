@@ -35,7 +35,8 @@ if (args.tocsv is not None) ^ (args.todb is not None):
 
 #### Infografiche
 # probabili_formazioni_2324 = 'https://www.fantacalcio.it/news/calcio-italia/05_08_2023/calciomercato-come-cambia-la-serie-a-2023-24-le-probabili-formazioni-446506'
-probabili_formazioni_2324 = 'https://www.fantacalcio.it/news/calcio-italia/01_02_2024/calciomercato-serie-a-probabili-formazioni-455658'
+# probabili_formazioni_2324 = 'https://www.fantacalcio.it/news/calcio-italia/01_02_2024/calciomercato-serie-a-probabili-formazioni-455658'
+probabili_formazioni_2425 = 'https://www.fantacalcio.it/news/01_08_2024/asta-fantacalcio-le-probabili-formazioni-della-serie-a-2024-25-464086'
 rigoristi = 'https://www.fantacalcio.it/rigoristi-serie-a'
 probabili_formazioni = 'https://www.fantacalcio.it/probabili-formazioni-serie-a'
 
@@ -46,7 +47,7 @@ seriea = 'https://www.legaseriea.it/it/serie-a'
 
 db = dashboard(15, CURRENT_YEAR - 1, quotazioni, statistiche, voti, seriea,
                prob=probabili_formazioni, rig=rigoristi, last=int(args.lastdays),
-               approb=probabili_formazioni_2324, update=args.update, headless=False)
+               approb=probabili_formazioni_2425, update=args.update, headless=False)
 # NOTE: Set headless=False to see what Firefox does
 
 if __name__ == '__main__':

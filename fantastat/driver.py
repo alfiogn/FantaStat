@@ -69,6 +69,7 @@ class driver(webdriver.Edge):
         elif sys_browser == 'edge':
             service = EdgeService(exe)
             super().__init__(service=service, options=self.options, keep_alive=True)
+        # super().manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
 
     def Get(self, url):
         if not self.login_done:

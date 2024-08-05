@@ -51,7 +51,7 @@ def Setup():
 
 def DownloadXLSX(b, q, s, v, update=False):
     ext = '.xlsx'
-    for i in range(15, 24):
+    for i in range(15, CURRENT_YEAR + 1):
         forceUpdate = i == CURRENT_YEAR and update
         if not b.CheckData(quot_prefix(i) + str(ext)) \
            or (i == CURRENT_YEAR and b.CheckTimeStamp(quot_prefix(i) + str(ext), days=5)) \

@@ -11,7 +11,7 @@ import os, re, pdb, unicodedata, time, glob
 import pickle
 from difflib import get_close_matches
 
-CURRENT_YEAR = 23
+CURRENT_YEAR = 24
 NTEAMS = 20
 NDAYS = 38
 various_names = '|'.join(["[A-Z]\\. [A-Z][a-z]*", "[A-Z][a-z']*[A-Z][a-z]*", "[A-Z][a-z]* [A-Z][a-z]*", "[A-Z][a-z]*"])
@@ -53,6 +53,7 @@ class championship():
             x.replace('[', '').replace(']', '').replace(',', '').split(),
             dtype=int)
         self.year = y
+        self.present = present
         self.update = update
         self.url = url
         self.db = None
@@ -64,7 +65,7 @@ class championship():
         self.filebase = prefix + '20' + str(y) + '.csv'
         self.file = '/'.join([b.download_path, self.filebase])
         self.last_day = NDAYS
-        if b.CheckData(self.filebase) or not (update and self.year == CURRENT_YEAR):
+        if b.CheckData(self.filebase) and not (update and self.year == CURRENT_YEAR):
             if not b.CheckTimeStamp(self.filebase, days=2) or not present:
                 self.db = pd.read_csv(self.file).map(self.map)
                 self.last_day = self.db.shape[0]
@@ -121,6 +122,8 @@ class championship():
         bdays = []
         time.sleep(2)
         count = 0
+        yearset = self.present
+        # pdb.set_trace()
         while len(bdays) == 0 and count < 15:
             time.sleep(0.25)
             bdays = self.browser.find_elements(By.XPATH, "//option[contains(., 'Giornata')]")
@@ -132,19 +135,33 @@ class championship():
             if i > (len(bdays) - 1):
                 RuntimeWarning("Day %d of year %d missing" % (i + 1, self.year))
                 continue
-            if filters is not None:
-                filters.click()
-                btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
-                btns[1].click()
-                daybtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'Giornata')]")[i + 3]
-                daybtn.click()
-                self.browser.find_elements(By.XPATH, '//*[@id="main"]/div[4]/div[1]/div[1]/div[3]/div[3]/button')[0].click()
-            else:
-                bdays[i].click()
+            if i != 0 and self.present:
+                if filters is not None:
+                    filters.click()
+                    btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
+                    if not yearset:
+                        btns[0].click()
+                        yearbtn = self.browser.find_elements(By.XPATH, "//p[contains(., '20%d-%d')]" % (self.year, self.year + 1))[0]
+                        yearbtn.click()
+                        time.sleep(1)
+                        yearset = True
+                        # showresultsbtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'MOSTRA RISULTATI')]")[0]
+                        # time.sleep(1)
+                    else:
+                        btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
+                        btns[1].click()
+                        daybtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'Giornata')]")[i + 3]
+                        daybtn.click()
+                    self.browser.find_elements(By.XPATH, '//*[@id="main"]/div[4]/div[1]/div[1]/div[3]/div[3]/button')[0].click()
+                else:
+                    bdays[i].click()
             time.sleep(1.0)
             home_out = self.ScrapDay()
 
             print("day", i+1)
+
+            # print(home_out)
+            # pdb.set_trace()
 
             if i == 0:
                 teams = np.append(home_out[:, 0], home_out[:, 2])
@@ -231,7 +248,7 @@ class PlayersList():
             self.backupfilebase = 'backup_players_'+'20'+str(y)+'_'+backup+'.pickle'
         self.backupfile = '/'.join([b.download_path, self.backupfilebase])
         self.Loaded = False
-        if b.CheckData(self.backupfile) or (update and self.year == CURRENT_YEAR):
+        if b.CheckData(self.backupfile) and (update and self.year == CURRENT_YEAR):
             if not b.CheckTimeStamp(self.backupfile, days=2):
                 with open(self.backupfile, 'rb') as f:
                     self.db = pd.read_pickle(f)
@@ -365,6 +382,9 @@ class PlayersList():
             else:
                 for line in idx:
                     self.db[col].values[line] = sub
+            # try:
+            # except:
+            #     RuntimeError("Something wrong happened in PlayersList.subIdx:\n", ls, t, col, sub)
 
         print("Scraping priorities:")
         for i in range(len(home)):
@@ -421,7 +441,7 @@ class PlayersList():
                             if lll[k] == 'out' and lll[k+1] in ['contro', 'per', 'a', 'nella']:
                                 injre += [' '.join(lll[k:])]
                                 break
-                            if lll[k] == 'da' and lll[k+1] == 'valutare':
+                            if lll[k] == 'da' and (lll[k+1] == 'valutare' or lll[k+1] == 'definire'):
                                 injre += [' '.join(lll[k:])]
                                 break
                             if lll[k] == 'stagione':
@@ -609,8 +629,8 @@ class Archive():
             for dbi in self.LastPlayers[::-1][(n0 - 1):n1]:
                 ndays += dbi['Pg'].values
                 idx = dbi['Pg'] > 0
-                dbn.loc[idx, 'Mv']     += dbi.loc[idx, 'Mv']
-                dbn.loc[idx, 'Mf']     += dbi.loc[idx, 'Mf']
+                dbn.loc[idx, 'Mv']     += dbi.loc[idx, 'Mv'].astype(np.float64)
+                dbn.loc[idx, 'Mf']     += dbi.loc[idx, 'Mf'].astype(np.float64)
                 dbn.loc[idx, 'Gf']     += dbi.loc[idx, 'Gf']
                 dbn.loc[idx, 'Rigori'] += dbi.loc[idx, 'Rigori']
                 dbn.loc[idx, 'Ass']    += dbi.loc[idx, 'Ass']
@@ -707,6 +727,9 @@ class Archive():
             'Verona': ('#002d6c', '#f7ca00'),
             'Frosinone': ('#c7d5eb', '#004292'),
             'Genoa': ('#ad0b16', '#002039'),
+            'Como': ('#1c2a40', '#ffffff'),
+            'Parma': ('#FFD200', '#1B4094'),
+            'Venezia': ('#436817', '#EF7D00'),
             'Cagliari': ('#98142b', '#ffffff'),
         }
         if only_bg:

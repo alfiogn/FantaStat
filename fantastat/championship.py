@@ -80,8 +80,8 @@ class championship():
         out = self.browser.find_elements(By.XPATH, "//div[contains(@class, 'hm-name-team away')]")
         data = np.empty((len(home), 4), dtype='<U20')
         for i in range(len(home)):
-            data[i, 0] = home[i].text.split('\n')[0]
-            data[i, 2] = out[i].text.split('\n')[0]
+            data[i, 0] = re.sub('[0-9]', '', home[i].text.split('\n')[0])
+            data[i, 2] = re.sub('[0-9]', '',  out[i].text.split('\n')[0])
         count = 0
         if len(scores) > 29:  # not the best hard-coded but should work
             for i in range(len(home)):
@@ -96,6 +96,7 @@ class championship():
 
     def ScrapAll(self):
         self.browser.get(self.url)
+        time.sleep(1)
         self.browser.Click("//button[contains(., 'Accetta')]")
         try:
             self.browser.Click('//*[@id="main"]/div[6]/div/div[1]/div/div/i')
@@ -125,37 +126,41 @@ class championship():
         yearset = self.present
         # pdb.set_trace()
         while len(bdays) == 0 and count < 15:
-            time.sleep(0.25)
+            time.sleep(0.5)
             bdays = self.browser.find_elements(By.XPATH, "//option[contains(., 'Giornata')]")
             filters = None
-            if bdays[1].text == '':
-                filters = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon hm-button-filter']")[0]
+            # print([b.text for b in bdays])
+            # pdb.set_trace()
+            # if bdays[1].text == '':
+            filters = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon hm-button-filter']")[0]
+            # print(filters)
             count += 1
         for i in range(NDAYS):
             if i > (len(bdays) - 1):
                 RuntimeWarning("Day %d of year %d missing" % (i + 1, self.year))
                 continue
-            if i != 0 and self.present:
+            if not yearset:
+                filters.click()
+                btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
+                btns[0].click()
+                yearbtn = self.browser.find_elements(By.XPATH, "//p[contains(., '20%d-%d')]" % (self.year, self.year + 1))[0]
+                yearbtn.click()
+                time.sleep(1)
+                yearset = True
+                self.browser.find_elements(By.XPATH, '//*[@id="main"]/div[4]/div[1]/div[1]/div[3]/div[3]/button')[0].click()
+                # showresultsbtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'MOSTRA RISULTATI')]")[0]
+                # time.sleep(1)
+            if i != 0:
                 if filters is not None:
                     filters.click()
                     btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
-                    if not yearset:
-                        btns[0].click()
-                        yearbtn = self.browser.find_elements(By.XPATH, "//p[contains(., '20%d-%d')]" % (self.year, self.year + 1))[0]
-                        yearbtn.click()
-                        time.sleep(1)
-                        yearset = True
-                        # showresultsbtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'MOSTRA RISULTATI')]")[0]
-                        # time.sleep(1)
-                    else:
-                        btns = self.browser.find_elements(By.XPATH, "//a[@class='hm-button-icon ms-auto']")
-                        btns[1].click()
-                        daybtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'Giornata')]")[i + 3]
-                        daybtn.click()
+                    btns[1].click()
+                    daybtn = self.browser.find_elements(By.XPATH, "//p[contains(., 'Giornata')]")[i + 3]
+                    daybtn.click()
                     self.browser.find_elements(By.XPATH, '//*[@id="main"]/div[4]/div[1]/div[1]/div[3]/div[3]/button')[0].click()
                 else:
                     bdays[i].click()
-            time.sleep(1.0)
+            time.sleep(0.5)
             home_out = self.ScrapDay()
 
             print("day", i+1)
@@ -177,10 +182,10 @@ class championship():
             for j in range(home_out.shape[0]):
                 team_out = np.where(teams == home_out[j, 2])[0][0]
                 ghome = home_out[j, 1]
-                df.loc[i, home_out[j, 0]] = [1, 0 if ghome == '' else int(ghome), team_out]
+                df.loc[i, home_out[j, 0]] = [1, 0 if ghome == '' else int(ghome), int(team_out)]
                 team_home = np.where(teams == home_out[j, 0])[0][0]
                 gout = home_out[j, 3]
-                df.loc[i, home_out[j, 2]] = [0, 0 if gout == '' else int(gout), team_home]
+                df.loc[i, home_out[j, 2]] = [0, 0 if gout == '' else int(gout), int(team_home)]
             # except:
             #     RuntimeError(home_out)
 
@@ -537,7 +542,7 @@ class Archive():
         self.LastPlayersFiles = None
         self.LastPlayers = None
         self.last_loaded = False
-        if os.path.isfile(self.backup_last) or not update:
+        if b.CheckData(self.backup_last) and update:
             with open(self.backup_last, 'rb') as f:
                 self.LastPlayersFiles, self.LastPlayers = pd.read_pickle(f)
                 self.last_loaded = True

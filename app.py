@@ -8,6 +8,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Open FantaStat dashboard.')
 parser.add_argument('--update', dest='update', action='store_true', help='trigger update of marks, results and priorities')
+parser.add_argument('--headless', dest='headless', action='store_true', help='use headless browser')
 parser.add_argument('--db-to-csv', dest='tocsv', help='pandas (in pickle) database to be converted to csv')
 parser.add_argument('--csv-to-db', dest='todb', help='csv to be converted into pandas (in pickle)')
 parser.add_argument('--last-to-load', dest='lastdays', help='last days to load')
@@ -47,7 +48,7 @@ seriea = 'https://www.legaseriea.it/it/serie-a'
 
 db = dashboard(15, CURRENT_YEAR - 1, quotazioni, statistiche, voti, seriea,
                prob=probabili_formazioni, rig=rigoristi, last=int(args.lastdays),
-               approb=probabili_formazioni_2425, update=args.update, headless=False)
+               approb=probabili_formazioni_2425, update=args.update, headless=args.headless)
 # NOTE: Set headless=False to see what Firefox does
 
 if __name__ == '__main__':

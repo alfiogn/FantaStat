@@ -10,6 +10,8 @@ from .championship import CURRENT_YEAR
 sys_browser = 'firefox'
 if os.name == 'nt':
     sys_browser = 'edge'
+elif os.name == 'posix':
+    sys_browser = 'safari'
 
 quot_prefix = lambda i: 'quotazioni' + '20' + str(i)
 stat_prefix = lambda i: 'statistiche' + '20' + str(i)
@@ -40,9 +42,11 @@ def Setup():
     exe_browser = None
     if sys_browser == 'firefox':
         exe_browser = '/'.join([pwd, 'fantastat/geckodriver'])
-        exe_browser = '/'.join([pwd, 'fantastat\geckodriver.exe'])
     elif sys_browser == 'edge':
         exe_browser = '\\'.join([pwd, 'fantastat\msedgedriver.exe'])
+    elif sys_browser == 'safari':
+        exe_browser = '/usr/bin/safaridriver'
+        # os.system('safaridriver --enable')
 
     user = os.environ['USER']
     password = os.environ['PASSWORD']

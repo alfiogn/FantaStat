@@ -1,4 +1,5 @@
 # Custom
+.DS_store
 Appunti/
 appunti_sheet.xlsx
 csv_to_notes.py

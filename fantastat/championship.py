@@ -34,16 +34,19 @@ def MatchPlayer(n, t, db):
     return db[db['Nome'] == closest[0]].index.values
 
 def MatchPlayerList(n, t, db):
-    possible_names = db.loc[db['Squadra'].values == t, 'Nome'].values
-    idx = []
-    for i in n:
-        closest = get_close_matches(i, possible_names, n=1)
-        if len(closest) == 0:
-            closest = get_close_matches(i, possible_names, n=1, cutoff=0.3)
-        if len(closest) == 0:
-            print(t, possible_names, i, closest)
-        idx += [db[db['Nome'] == closest[0]].index.values]
-    return idx
+    try:
+        possible_names = db.loc[db['Squadra'].values == t, 'Nome'].values
+        idx = []
+        for i in n:
+            closest = get_close_matches(i, possible_names, n=1)
+            if len(closest) == 0:
+                closest = get_close_matches(i, possible_names, n=1, cutoff=0.3)
+            if len(closest) == 0:
+                raise RuntimeError('Couldn\'t find closest match for team', t, possible_names, "\nname =", i, "  found =", closest)
+            idx += [db[db['Nome'] == closest[0]].index.values]
+        return idx
+    except:
+        raise RuntimeError('MatchPlayerList failed:', n, t)
 
 
 
@@ -113,7 +116,7 @@ class championship():
             try:
                 y.click()
             except:
-                RuntimeError("Year 20%d-%d not found at %s" % (self.year, self.year+1, self.browser.current_url), y)
+                raise RuntimeError("Year 20%d-%d not found at %s" % (self.year, self.year+1, self.browser.current_url), y)
         time.sleep(1)
         # self.browser.refresh()
         df = pd.DataFrame(data=[[np.zeros(3, dtype=int)]*NTEAMS]*NDAYS)
@@ -371,25 +374,38 @@ class PlayersList():
         # self.db['Squa'] = ''
         self.db['Inf'] = ''
         day = int(self.browser.find_element(By.XPATH, "//small[contains(., 'Giornata')]").text.split()[-1])
-        home = [i.text for i in self.browser.find_elements(By.XPATH, "//label[contains(@class, 'team-home')]")[10:]]
-        away = [i.text for i in self.browser.find_elements(By.XPATH, "//label[contains(@class, 'team-away')]")[10:]]
-        titlist = self.browser.find_elements(By.XPATH, "//ul[contains(@class, 'player-list starters')]")
-        soslist = self.browser.find_elements(By.XPATH, "//ul[contains(@class, 'player-list reserves')]")
+        home = [i.text.replace('\n', '').replace(' ', '')
+            for i in self.browser.find_elements(By.XPATH, "//label[contains(@class, 'team-home')]")[10:]]
+        away = [i.text.replace('\n', '').replace(' ', '')
+            for i in self.browser.find_elements(By.XPATH, "//label[contains(@class, 'team-away')]")[10:]]
+        def get_list(xpath):
+            ls = []
+            for t in self.browser.find_elements(By.XPATH, xpath):
+                entry = []
+                for i,l in enumerate(t.text.split('\n')):
+                    if l.strip() != '':
+                        entry.append(l.strip())
+                ls.append('\n'.join(entry))
+            return ls
+        titlist =   get_list("//ul[contains(@class, 'player-list starters')]")
+        soslist =   get_list("//ul[contains(@class, 'player-list reserves')]")
         ballolist = self.browser.find_elements(By.XPATH, "//section[contains(@class, 'ballots')]")
-        susplist = self.browser.find_elements(By.XPATH, "//section[contains(@class, 'suspendeds')]")
-        injlist = self.browser.find_elements(By.XPATH, "//section[contains(@class, 'injureds')]")
+        susplist =  self.browser.find_elements(By.XPATH, "//section[contains(@class, 'suspendeds')]")
+        injlist =   self.browser.find_elements(By.XPATH, "//section[contains(@class, 'injureds')]")
+        # print('TIT', titlist, 'SOS', soslist, 'BALLO', ballolist, 'SUS', susplist, 'INJ', injlist, sep='\n')
+        # pdb.set_trace()
 
         def subIdx(ls, t, col, sub):
-            idx = MatchPlayerList(ls, t, self.db)
-            if isinstance(sub, list):
-                for i,line in enumerate(idx):
-                    self.db[col].values[line] = sub[i]
-            else:
-                for line in idx:
-                    self.db[col].values[line] = sub
-            # try:
-            # except:
-            #     RuntimeError("Something wrong happened in PlayersList.subIdx:\n", ls, t, col, sub)
+            try:
+                idx = MatchPlayerList(ls, t, self.db)
+                if isinstance(sub, list):
+                    for i,line in enumerate(idx):
+                        self.db[col].values[line] = sub[i]
+                else:
+                    for line in idx:
+                        self.db[col].values[line] = sub
+            except:
+                raise RuntimeError("Something wrong happened in PlayersList.subIdx:\n", ls, t, col, sub)
 
         print("Scraping priorities:")
         for i in range(len(home)):
@@ -399,37 +415,49 @@ class PlayersList():
             ha_team = [home[i], away[i]]
             print(' vs '.join(ha_team))
             for j in range(2):
-                ballo, susp, inj = ha_ballo[j], ha_susp[j], ha_inj[j]
+                def tidy(s, pattern=''):
+                    l = []
+                    for i in s.text.split('\n'):
+                        if i.strip() != '' and i.strip() != pattern:
+                            l.append(i.strip())
+                    l = '\n'.join(l)
+                    return l
+                ballo, susp, inj = \
+                    tidy(ha_ballo[j], pattern='Grafico ballottaggio'), \
+                    tidy(ha_susp[j], pattern='Nessun calciatore'), \
+                    tidy(ha_inj[j])
+                # print(ballo, susp, inj, sep='\n')
+
 
                 team = ha_team[j].title()
                 idx = 2*i + j
-                tit = titlist[idx].text.split('\n')[::2]
+                tit = titlist[idx].split('\n')[::2]
                 subIdx(tit, team, 'N.Tit', 1)
-                sos = soslist[idx].text.split('\n')
+                sos = soslist[idx].split('\n')
                 for k in sos:
                     if k[:16] == "con quest'ultimo":
                         sos.remove(k)
                 sos = sos[::2]
                 perc = np.array([int(j.replace('%', ''))
-                                   for j in soslist[idx].text.split('\n')[1::2]])
+                                   for j in soslist[idx].split('\n')[1::2]])
                 sos = np.array(sos)[perc > 30]
                 subIdx(sos, team, 'N.Tit', 2)
-                firsts = ballo.text.split('\n')
+                firsts = ballo.split('\n')
                 for k in firsts:
                     if k[:16] == "con quest'ultimo":
                         firsts.remove(k)
                 firsts = firsts[::2][::2]
                 if firsts[0][:6] != 'Nessun':
-                    seconds = ballo.text.split('\n')
+                    seconds = ballo.split('\n')
                     for k in seconds:
                         if k[:16] == "con quest'ultimo":
                             seconds.remove(k)
                     seconds = seconds[::2][1::2]
                     subIdx(seconds, team, 'N.Tit', 2)
                     subIdx(seconds, team, 'N.Sos', firsts)
-                injpl = inj.text.split('\n')[::2]
+                injpl = inj.split('\n')[::2]
                 if injpl[0][:6] != 'Nessun':
-                    injreason = inj.text.split('\n')[1::2]
+                    injreason = inj.split('\n')[1::2]
                     injre = []
                     for l in injreason:
                         lll = l.split(' ')
@@ -474,7 +502,7 @@ class PlayersList():
 
         for t in teams:
             text = unicodedata.normalize('NFD', t.text).encode('ascii', 'ignore').decode("utf-8")
-            txt = text.replace('*', '').split('\n')
+            txt = [t.strip() for t in text.replace('*', '').split('\n') if t.strip() != '']
             teamUp = txt[0].title()
             print(teamUp)
             rigdict = {}

@@ -52,7 +52,7 @@ class Scraper():
                 time.sleep(1)
                 player_rows = self.browser.Find("//tr[contains(@class, 'player-row')]", False)
                 for p in player_rows:
-                    up = elf.browser.FindIn(p, ".//a[@class='player-name player-link']")
+                    up = self.browser.FindIn(p, ".//a[@class='player-name player-link']")
                     link = up.get_attribute('href')
                     if link.split('/')[-1] != season:
                         link += '/' + season
@@ -78,20 +78,27 @@ class Scraper():
                 player_urls = [p.url for p in self.player_list[s]]
             if n != m:
                 self.CheckOnline()
+                error = False
                 for i,u in enumerate(self.url_list[s]):
                     if (i < m and not player_urls[i] == u) or u not in player_urls:
                         print('player %d/%d =' % (i + 1, n), u)
                         p = Player(u)
-                        p.Scrap(self.browser)
+                        try:
+                            p.Scrap(self.browser)
+                        except:
+                            error = True
+                            break
                         self.player_list[s].append(p)
                         # pdb.set_trace()
                 pickle.dump(self.player_list[s], open(backup_file, 'wb'))
+                if error:
+                    raise RuntimeError("Error occurred at scraping of player", u)
             print("Scrapped", len(self.player_list[s]), "players for season", s)
         print("\n")
 
     def ScrapAll(self):
-        scrap.ScrapPlayerList()
-        scrap.ScrapPlayerData()
+        self.ScrapPlayerList()
+        self.ScrapPlayerData()
 
 
 if __name__ == "__main__":

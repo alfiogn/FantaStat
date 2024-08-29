@@ -56,7 +56,7 @@ class Player():
 
     def _main_info(self, b):
         #
-        main_info = b.Find("//section[@id='player-main-info']")
+        main_info = b.Find("//section[@id='player-main-info']", wait=2)
         self.name = b.FindIn(main_info, ".//h1[contains(@class, 'player-name')]").text
         self.role = b.FindIn(main_info, ".//span[@class='role']").get_attribute('data-value').title()
         self.matra_role = b.FindIn(main_info, ".//span[contains(@class, 'role-mantra')]").get_attribute('data-value').title()
@@ -157,13 +157,17 @@ class Player():
 
     def _last_section(self, b):
         #
-        last_section = b.Find("//section[@id='player-description']")
         self.long_descr = {}
-        entries = b.FindIn(last_section, ".//p[@class='li1']", False)
-        for e in entries:
-            key = strip(b.FindIn(e, './/strong').text)
-            value = strip(e.text.replace(key, '')[1:])
-            self.long_descr[key] = value
+        try:
+            last_section = b.Find("//section[@id='player-description']")
+            entries = b.FindIn(last_section, ".//p[@class='li1']", False)
+            for e in entries:
+                key = strip(b.FindIn(e, './/strong').text)
+                value = strip(e.text.replace(key, '')[1:])
+                self.long_descr[key] = value
+        except:
+            pass
+
 
 
 if __name__ == "__main__":

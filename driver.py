@@ -99,7 +99,7 @@ class Driver():
                     pass
                 stop = time.time()
                 t += (stop - start)
-                print(t, start, stop)
+                # print(t, start, stop)
         if res is not None:
             return res
         else:

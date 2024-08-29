@@ -1,13 +1,5 @@
 # Custom
-Appunti/
-appunti_sheet.xlsx
-csv_to_notes.py
-notes_to_csv.py
-asta_notes.csv
-bashrc
-profile.ps1
-data/
-my_asta_notes.csv
+.DS_Store
 __*.vim
 .*.sw*
 *.log

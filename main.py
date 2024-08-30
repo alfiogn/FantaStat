@@ -2,6 +2,10 @@ from driver import Driver, FANTASTAT_PATH, HOME, DATA_PATH
 from player import Player
 from scraper import Scraper
 
-scrap = Scraper()
-scrap.ScrapAll()
+import numpy as np
+
+# Scrap and save data
+raw = Scraper(n_years=9)
+raw.ScrapAll()
+
 

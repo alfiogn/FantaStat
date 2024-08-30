@@ -13,6 +13,7 @@ def number(s, t=float):
     except:
         return -1
 
+
 class Player():
     def __init__(self, url):
         self.url = url
@@ -45,6 +46,8 @@ class Player():
 
     def Scrap(self, b):
         b.Get(self.url)
+        if '404' in b.instance.current_url:
+            return False
         # time.sleep(0.5)
         self._main_info(b)
         self._summary_stats(b)
@@ -53,6 +56,7 @@ class Player():
         self._price_graph(b)
         self._season_table(b)
         self._last_section(b)
+        return True
 
     def _main_info(self, b):
         #
@@ -168,6 +172,27 @@ class Player():
         except:
             pass
 
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+
+class PlayerList():
+    def __init__(self, ul, ls):
+        self.raw_data = ls
+        self.map = {ul[i][0].lower(): i  for i,l in enumerate(ls)}
+        # for i,l in enumerate(ls):
+        #     print(ul[i][0], l.name)
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return self.raw_data[self.map[key.lower()]]
+        elif isinstance(key, int):
+            return self.raw_data[key]
+        else:
+            RuntimeError("key", key, "not valid, it must be either str or int")
+
+    def __len__(self):
+        return len(self.raw_data)
 
 
 if __name__ == "__main__":

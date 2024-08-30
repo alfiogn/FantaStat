@@ -5,6 +5,7 @@ __*.vim
 *.log
 .~lock.*
 __flaskcache__
+~$*.xlsx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

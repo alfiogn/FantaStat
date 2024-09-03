@@ -49,12 +49,13 @@ class Driver():
             options.add_argument('--disable-software-rasterizer')
             options.add_argument('--user-data-dir=' + data_fld)
             options.add_experimental_option('prefs', {
-                        'download.default_directory': self.download_path,
-                        'download.prompt_for_download': False,
-                        'download.directory_upgrade': True,
-                        'safebrowsing.enabled': True,
-                        'profile.default_content_settings.popups': False,
-                        'download.default_content_setting_values.automatic_downloads': 1,
+                'download.default_directory': self.download_path,
+                'download.prompt_for_download': False,
+                'download.directory_upgrade': True,
+                'safebrowsing.enabled': True,
+                'profile.default_content_settings.popups': False,
+                'download.default_content_setting_values.automatic_downloads': 1,
+                "profile.managed_default_content_settings.images": 2
             })
             options.add_experimental_option("excludeSwitches", ["enable-logging"])
             if headless:
@@ -64,6 +65,7 @@ class Driver():
             self.instance = webdriver.Edge(service=self.service, options=self.options)
         else:
             raise IOError('cannot load service')
+        # self.instance.implicitly_wait(0.001)  # seconds
 
     def Get(self, url):
         self.instance.get(url)
@@ -72,7 +74,7 @@ class Driver():
         time.sleep(t)
         self.instance.find_elements(By.XPATH, xpath)[0].click()
 
-    def WaitClick(self, xpath, t=8):
+    def WaitClick(self, xpath, t=2):
         WebDriverWait(self.instance, t).until(
             expected_conditions.element_to_be_clickable(
                 (By.XPATH, xpath)

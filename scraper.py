@@ -40,13 +40,13 @@ class Scraper():
             self.browser.CookiesAccept()
             self.online = True
 
-    def ScrapPlayerList(self):
+    def ScrapPlayerList(self, update=False):
         self.url_list = {}
         self.name_list = {}
         for y in range(self.cur_year - self.years_to_analyse, self.cur_year + 1):
             season = SEASON(y)
             filename = os.path.join(DATA_PATH, LIST_NAME(season))
-            if os.path.isfile(filename):
+            if os.path.isfile(filename) and not (update and y == self.cur_year):
                 self.url_list[season] = np.loadtxt(filename, dtype=str, delimiter=',')
             else:
                 self.CheckOnline()
@@ -66,12 +66,13 @@ class Scraper():
             print("Found", len(self.url_list[season]), "players for season", season)
         print("\n")
 
-    def ScrapPlayerData(self):
+    def ScrapPlayerData(self, update=False):
         self.player_list = {}
         for s in self.url_list.keys():
             print('Season', s)
             backup_file = os.path.join(DATA_PATH, PLAYER_LIST_NAME(s))
-            if os.path.isfile(backup_file):
+            player_list = []
+            if os.path.isfile(backup_file) and not (update and s == SEASON(self.cur_year)):
                 player_list = pickle.load(open(backup_file, 'rb'))
 
             n = len(self.url_list[s])
@@ -100,6 +101,7 @@ class Scraper():
                             index_to_del.append(i)
                             m += 1
                         # pdb.set_trace()
+                player_list = player_list[:n]
                 pickle.dump(player_list, open(backup_file, 'wb'))
                 if error:
                     raise RuntimeError("Error occurred at scraping of player", u)
@@ -107,12 +109,34 @@ class Scraper():
             print("Scrapped", len(player_list), "players for season", s)
         print("\n")
 
-    def ScrapAll(self):
-        self.ScrapPlayerList()
-        self.ScrapPlayerData()
+    def ScrapAll(self, updatelist=False, updatedata=False):
+        self.ScrapPlayerList(updatelist)
+        self.ScrapPlayerData(updatedata)
+
+    def UpdateAll(self):
+        for s in self.player_list.keys():
+            backup_file = os.path.join(DATA_PATH, PLAYER_LIST_NAME(s))
+            player_list = []
+            for p in self.player_list[s].raw_data:
+                if p.name is not None:
+                    # put something you want to adjust
+                    # eg: p.days = [int(i) for i in p.days]
+                    # eg: p._derived()
+                    p._derived()
+                    pass
+                player_list.append(Player(copy=p))
+            self.player_list[s] = PlayerList(self.url_list[s], player_list)
+            print("Updated", len(player_list), "players for season", s)
+            pickle.dump(player_list, open(backup_file, 'wb'))
 
     def __getitem__(self, key):
         return self.player_list[SEASON(self.cur_year + key)]
+
+    def __len__(self):
+        return len(self.player_list)
+
+    def __iter__(self):
+        return self.player_list.items()
 
 
 if __name__ == "__main__":

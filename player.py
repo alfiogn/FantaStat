@@ -2,6 +2,35 @@ import os, glob, re, pickle, time, pdb
 import numpy as np
 import pandas as pd
 
+TEAM_COLORS = {
+    'Atalanta': ('#2d5cae', '#000000'),
+    'Bologna': ('#9f1f33', '#1b2838'),
+    'Cagliari': ('#98142b', '#ffffff'),
+    'Como': ('#1c2a40', '#ffffff'),
+    'Cremonese': ('#c9974e', '#e61b23'),
+    'Empoli': ('#0558ac', '#ffffff'),
+    'Fiorentina': ('#50408f', '#ffffff'),
+    'Frosinone': ('#c7d5eb', '#004292'),
+    'Genoa': ('#ad0b16', '#002039'),
+    'Inter': ('#001ea0', '#000000'),
+    'Juventus': ('#000000', '#ffffff'),
+    'Lazio': ('#85d8f8', '#000000'),
+    'Lecce': ('#db2d1f', '#f6ea00'),
+    'Milan': ('#ce171f', '#231f20'),
+    'Monza': ('#dd032e', '#ffffff'),
+    'Napoli': ('#199fd6', '#003e81'),
+    'Parma': ('#FFD200', '#1B4094'),
+    'Roma': ('#fbba00', '#970a2c'),
+    'Salernitana': ('#651911', '#ffffff'),
+    'Sampdoria': ('#004b95', '#ffffff'),
+    'Sassuolo': ('#0fa653', '#ffffff'),
+    'Spezia': ('#000000', '#a79256'),
+    'Torino': ('#881f19', '#ffffff'),
+    'Udinese': ('#7f7f7f', '#ffffff'),
+    'Venezia': ('#436817', '#EF7D00'),
+    'Verona': ('#002d6c', '#f7ca00'),
+}
+
 def strip(s):
     return s.replace('\n', '').strip()
 

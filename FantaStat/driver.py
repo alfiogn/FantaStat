@@ -14,9 +14,10 @@ import os, glob, re, pickle, time, pdb
 import numpy as np
 import pandas as pd
 
-from player import Player
+from .player import Player
 
-FANTASTAT_PATH = os.path.dirname(os.path.abspath(__file__))
+# FANTASTAT_PATH = os.path.dirname(os.path.abspath(__file__))
+FANTASTAT_PATH = os.path.dirname(os.path.abspath('.'))
 DATA_PATH = os.path.join(FANTASTAT_PATH, 'data')
 HOME = os.getenv('HOME')
 if HOME is None:
@@ -82,10 +83,15 @@ class Driver():
         ).click()
 
     def FindIn(self, b, xpath, single=True):
-        if single:
-            return b.find_element(By.XPATH, xpath)
-        else:
-            return b.find_elements(By.XPATH, xpath)
+        try:
+            if single:
+                return b.find_element(By.XPATH, xpath)
+            else:
+                return b.find_elements(By.XPATH, xpath)
+        except:
+            print(b.current_url)
+            print(xpath)
+            raise Exception()
 
     def Find(self, xpath, single=True, wait=None):
         res = None

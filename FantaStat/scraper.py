@@ -1,7 +1,7 @@
-from driver import Driver, FANTASTAT_PATH, HOME, DATA_PATH
-from player import Player, PlayerList
+from .driver import Driver, FANTASTAT_PATH, HOME, DATA_PATH
+from .player import Player, PlayerList
 
-import os, glob, re, pickle, time, pdb
+import os, glob, re, pickle, time, pdb, datetime
 import numpy as np
 
 SAFARI = False
@@ -26,7 +26,8 @@ class Scraper():
         if not os.path.isdir(DATA_PATH):
             os.mkdir(DATA_PATH)
         self.cur_year = int(str(time.gmtime().tm_year)[-2:])
-        if time.gmtime().tm_mon < 8:
+        now = time.gmtime()
+        if datetime.datetime(now.tm_year, now.tm_mon, now.tm_mday) < datetime.datetime(self.cur_year, 7, 28):
             self.cur_year -= 1
         self.years_to_analyse = n_years
         self.url_list = None
@@ -47,22 +48,41 @@ class Scraper():
             season = SEASON(y)
             filename = os.path.join(DATA_PATH, LIST_NAME(season))
             if os.path.isfile(filename) and not (update and y == self.cur_year):
-                self.url_list[season] = np.loadtxt(filename, dtype=str, delimiter=',')
+                data = np.loadtxt(filename, dtype=str, delimiter=',')
+                self.url_list[season] = data[:, :2]
+                self.name_list[season] = {
+                    str(data[i, 0]): dict(zip(['role', 'team', 'qi', 'qf', 'fvm'], [str(s) for s in data[i, 2:]]))
+                    for i in range(data.shape[0])
+                }
             else:
                 self.CheckOnline()
                 self.url_list[season] = []
+                self.name_list[season] = {}
                 self.browser.Click('//select/option[@value="%s"]' % (season.replace('-', '/')))
                 time.sleep(1)
                 player_rows = self.browser.Find("//tr[contains(@class, 'player-row')]", False)
                 for p in player_rows:
                     up = self.browser.FindIn(p, ".//a[@class='player-name player-link']")
-                    name = self.browser.FindIn(up, ".//span").get_attribute("textContent")
+                    name = str(self.browser.FindIn(up, ".//span").get_attribute("textContent"))
                     link = up.get_attribute('href')
                     if link.split('/')[-1] != season:
                         link += '/' + season
                     link += '/statistico'
                     self.url_list[season].append([name, link])
-                np.savetxt(filename, self.url_list[season], fmt='%s,%s')
+                    # other data
+                    up = self.browser.FindIn(p, ".//th[@class='player-role player-role-classic']")
+                    role = self.browser.FindIn(up, ".//span").get_attribute("data-value").upper()
+                    team = self.browser.FindIn(p, ".//td[@class='player-team']").get_attribute("textContent").title()
+                    qi = self.browser.FindIn(p, ".//td[@class='player-classic-initial-price']").get_attribute("textContent")
+                    qf = self.browser.FindIn(p, ".//td[@class='player-classic-current-price']").get_attribute("textContent")
+                    fvm = self.browser.FindIn(p, ".//td[@class='player-classic-fvm']").get_attribute("textContent")
+                    self.name_list[season][name] = {
+                        'role': role.strip().strip('\n'), 'team': team.strip().strip('\n'),
+                        'qi': qi.strip().strip('\n'), 'qf': qf.strip().strip('\n'),
+                        'fvm': fvm.strip().strip('\n')
+                    }
+                data = [u + list(self.name_list[season][u[0]].values()) for i,u in enumerate(self.url_list[season])]
+                np.savetxt(filename, data, fmt='%s,%s,%s,%s,%s,%s,%s')
             print("Found", len(self.url_list[season]), "players for season", season)
         print("\n")
 
@@ -72,6 +92,7 @@ class Scraper():
             print('Season', s)
             backup_file = os.path.join(DATA_PATH, PLAYER_LIST_NAME(s))
             player_list = []
+            errors = []
             if os.path.isfile(backup_file) and not (update and s == SEASON(self.cur_year)):
                 player_list = pickle.load(open(backup_file, 'rb'))
 
@@ -82,17 +103,18 @@ class Scraper():
                 player_urls = [p.url for p in player_list]
             if n != m:
                 self.CheckOnline()
-                error = False
                 index_to_del = []
                 for i,(name,u) in enumerate(self.url_list[s]):
                     if (i < m and not player_urls[i] == u) or u not in player_urls:
-                        print('player %d/%d =' % (i + 1, n), u)
+                        basic_info = self.name_list[s][name]
+                        print('player %d/%d =' % (i + 1, n), u, end="....  ")
                         p = Player(u)
                         ok = False
+                        p.set_basic(name, basic_info['role'], basic_info['team'], int(basic_info['qi']), int(basic_info['fvm']))
                         try:
                             ok = p.Scrap(self.browser)
                         except:
-                            error = True
+                            errors.append(u)
                             break
                         player_urls.insert(i, p.url)
                         player_list.insert(i, p)
@@ -100,11 +122,14 @@ class Scraper():
                             print("    not found")
                             index_to_del.append(i)
                             m += 1
+                        else:
+                            print()
                         # pdb.set_trace()
                 player_list = player_list[:n]
                 pickle.dump(player_list, open(backup_file, 'wb'))
-                if error:
-                    raise RuntimeError("Error occurred at scraping of player", u)
+                if errors:
+                    print('Saving a backup...')
+                    raise RuntimeError("Error occurred at scraping of player\n", errors)
             self.player_list[s] = PlayerList(self.url_list[s], player_list)
             print("Scrapped", len(player_list), "players for season", s)
         print("\n")
@@ -130,7 +155,10 @@ class Scraper():
             pickle.dump(player_list, open(backup_file, 'wb'))
 
     def __getitem__(self, key):
-        return self.player_list[SEASON(self.cur_year + key)]
+        if isinstance(key, int):
+            return self.player_list[SEASON(self.cur_year + key)]
+        else:
+            return self.player_list[key]
 
     def __len__(self):
         return len(self.player_list)

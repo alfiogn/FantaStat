@@ -58,20 +58,18 @@ class Player():
             self.quotm = None
             self.fvmc = None
             self.fvmm = None
+            self.fvmc_history = None
+            self.fvmm_history = None
             self.descr = None
             self.stats = None
             self.voto = None
             self.fvoto = None
-            self.voto = None
             self.bonus = None
             self.malus = None
             self.price = None
             self.presence_type = None
             self.presence = None
             self.days = None
-            self.matches = None
-            self.in_out = None
-            self.events = None
             self.matches = None
             self.in_out = None
             self.events = None
@@ -84,13 +82,21 @@ class Player():
             if self.db is not None:
                 self._derived()
 
+    def set_basic(self, name, role, team, quotc, fvmc):
+        self.name = name
+        self.role = role
+        self.team = team
+        self.quotc = quotc
+        self.fvmc = fvmc
+
     def _copy(self, copy):
         for k,v in copy.__dict__.items():
             exec('self.%s = v' % k)
 
     def Scrap(self, b):
         b.Get(self.url)
-        if '404' in b.instance.current_url:
+        if b.instance.current_url.endswith('/404') \
+            or '403 ERROR' in b.Find('//h1').text:
             return False
         id_content = b.Find("//div[@id='content']", wait=2)
         # time.sleep(0.5)
@@ -179,6 +185,25 @@ class Player():
             self.price.append(number(p.get_attribute('data-primary-value'), int))
         # print(price)
 
+    def _fvm_table(self, b, parent):
+        #
+        fvm_table = b.FindIn(parent, "//div[@id='fmvHistoryModal']")
+        dates_fvms = b.FindIn(fvm_table, ".//li[contains(@class, 'item')]", single=False)
+        self.fvmc_history = []
+        self.fvmm_history = []
+        for i,j in zip(dates_fvms[::2], dates_fvms[1::2]):
+            spans = b.FindIn(i, ".//span", single=False)
+            self.fvmc_history.append([
+                strip(spans[1].get_attribute("textContent")),
+                int(strip(spans[0].get_attribute("textContent")))
+            ])
+            spans = b.FindIn(j, ".//span", single=False)
+            self.fvmm_history.append([
+                strip(spans[1].get_attribute("textContent")),
+                int(strip(spans[0].get_attribute("textContent")))
+            ])
+        # print(price)
+
     def _season_table(self, b, parent):
         #
         season_table = b.FindIn(parent, "//section[@id='player-season-table']")
@@ -229,13 +254,17 @@ class Player():
             pass
 
     def _derived(self):
-        self.db_columns = ['Giornata', 'Presenza', 'Voto', 'Bonus', 'Malus', 'Gol', 'Assist', 'RF', 'RS', 'Minuti', 'Vinto', 'InCasa']
+        self.db_columns = [
+            'Giornata', 'Presenza', 'Quotazione', 'Voto', 'FantaVoto', 'Bonus', 'Malus',
+            'Gol', 'Assist', 'RF', 'RS', 'Minuti',
+            'InCasa', 'Squadra', 'Avversario', 'GolFatti', 'GolSubiti'
+        ]
         self.db = pd.DataFrame(columns=self.db_columns)
         if self.days is not None:
             i0 = 0
             for d in self.days:
                 i = d - 1
-                entry = [d, self.presence_type[i], self.voto[i], self.bonus[i], self.malus[i]]
+                entry = [d, self.presence_type[i], self.price[i], self.voto[i], self.fvoto[i], self.bonus[i], self.malus[i]]
                 gf = self.events[i0].get('Gol segnati', 0)
                 a = self.events[i0].get('Assist', 0)
                 gs = self.events[i0].get('Gol subiti', 0)
@@ -253,14 +282,12 @@ class Player():
                 if minuti == 0 and self.presence_type[i] == 'Titolare':
                     minuti = 90
                 entry += [minuti]
-                casa = 0 if self.team[:3].upper() == self.matches[i0][2] else 1
-                win = 0
-                gi, go = self.matches[i0][1], self.matches[i0][3]
-                if gi == go:
-                    win = 0.5
-                elif bool(casa and gi > go) != bool(not casa and go > gi):
-                    win = 1
-                entry += [win, casa]
+                mtc = self.matches[i0]
+                if self.team[:3].upper()[:3] == mtc[0].upper()[:3]:  # casa
+                    entry += [1, mtc[0], mtc[2], mtc[1], mtc[3]]
+                else:
+                    entry += [0, mtc[2], mtc[0], mtc[3], mtc[1]]
+
                 self.db.loc[len(self.db.index), :] = entry
                 i0 += 1
 
@@ -274,6 +301,7 @@ class Player():
 class PlayerList():
     def __init__(self, ul, ls):
         self.raw_data = ls
+        self.days = ls[0].days
         self.map = {ul[i][0].lower(): i  for i,l in enumerate(ls)}
 
     def __getitem__(self, key):
@@ -293,7 +321,7 @@ class PlayerList():
 if __name__ == "__main__":
     from driver import Driver
     from scraper import SAFARI, EDGE, FIREFOX
-    url = 'https://www.fantacalcio.it/serie-a/squadre/atalanta/retegui/6228/2024-25/statistico'
+    url = 'https://www.fantacalcio.it/serie-a/squadre/milan/camarda/6519/2024-25/statistico'
     pl = Player(url)
     b = Driver(SAFARI, EDGE, FIREFOX)
     b.Get(url)

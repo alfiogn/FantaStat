@@ -19,6 +19,7 @@ TEAM_COLORS = {
     'Milan': ('#ce171f', '#231f20'),
     'Monza': ('#dd032e', '#ffffff'),
     'Napoli': ('#199fd6', '#003e81'),
+    'Pisa': ('#000000', '#2d5cae'),
     'Parma': ('#FFD200', '#1B4094'),
     'Roma': ('#fbba00', '#970a2c'),
     'Salernitana': ('#651911', '#ffffff'),
@@ -30,6 +31,11 @@ TEAM_COLORS = {
     'Venezia': ('#436817', '#EF7D00'),
     'Verona': ('#002d6c', '#f7ca00'),
 }
+
+
+def print_debug(s, verbose):
+    if verbose:
+        print('[DEBUG] ' + s.replace('\n', '\n[DEBUG] '))
 
 def strip(s):
     return s.replace('\n', '').strip()
@@ -93,27 +99,42 @@ class Player():
         for k,v in copy.__dict__.items():
             exec('self.%s = v' % k)
 
-    def Scrap(self, b):
+    def Scrap(self, b, verbose=False):
+        print_verbose = lambda s: print_debug(s, verbose)
         b.Get(self.url)
         if b.instance.current_url.endswith('/404') \
             or '403 ERROR' in b.Find('//h1').text:
+            print_verbose('Problem scraping', b.instance.current_url)
+            print_verbose(b.Find('//h1').text)
             return False
         id_content = b.Find("//div[@id='content']", wait=2)
         # time.sleep(0.5)
         if any([i is None for i in [self.name, self.role, self.mantra_role, self.generic_data, self.mv, self.fmv, self.quotc, self.fvmc, self.fvmm, self.descr]]):
+            print()
+            print_verbose(' --> Main info')
             self._main_info(b, id_content)
         if self.stats is None:
+            print_verbose(' --> Summary statistics')
             self._summary_stats(b, id_content)
         if any([i is None for i in [self.voto, self.fvoto]]):
+            print_verbose(' --> Marks')
             self._grades_graph(b, id_content)
         if any([i is None for i in [self.bonus, self.malus]]):
+            print_verbose(' --> Bonus/Malus')
             self._bonus_malus(b, id_content)
         if self.price is None:
+            print_verbose(' --> Prices')
             self._price_graph(b, id_content)
+        if self.fvmc_history is None:
+            print_verbose(' --> FVMs')
+            self._fvm_table(b, id_content)
         if any([i is None for i in [self.presence_type, self.matches, self.in_out, self.events]]):
+            print_verbose(' --> Presences')
             self._season_table(b, id_content)
         if self.long_descr is None:
+            print_verbose(' --> Description')
             self._last_section(b, id_content)
+        print_verbose('End')
         self._derived()
         return True
 
@@ -186,23 +207,25 @@ class Player():
         # print(price)
 
     def _fvm_table(self, b, parent):
-        #
-        fvm_table = b.FindIn(parent, "//div[@id='fmvHistoryModal']")
-        dates_fvms = b.FindIn(fvm_table, ".//li[contains(@class, 'item')]", single=False)
         self.fvmc_history = []
         self.fvmm_history = []
-        for i,j in zip(dates_fvms[::2], dates_fvms[1::2]):
-            spans = b.FindIn(i, ".//span", single=False)
-            self.fvmc_history.append([
-                strip(spans[1].get_attribute("textContent")),
-                int(strip(spans[0].get_attribute("textContent")))
-            ])
-            spans = b.FindIn(j, ".//span", single=False)
-            self.fvmm_history.append([
-                strip(spans[1].get_attribute("textContent")),
-                int(strip(spans[0].get_attribute("textContent")))
-            ])
-        # print(price)
+        try:
+            fvm_table = b.FindIn(parent, "//div[@id='fmvHistoryModal']")
+            dates_fvms = b.FindIn(fvm_table, ".//li[contains(@class, 'item')]", single=False)
+
+            for i,j in zip(dates_fvms[::2], dates_fvms[1::2]):
+                spans = b.FindIn(i, ".//span", single=False)
+                self.fvmc_history.append([
+                    strip(spans[1].get_attribute("textContent")),
+                    int(strip(spans[0].get_attribute("textContent")))
+                ])
+                spans = b.FindIn(j, ".//span", single=False)
+                self.fvmm_history.append([
+                    strip(spans[1].get_attribute("textContent")),
+                    int(strip(spans[0].get_attribute("textContent")))
+                ])
+        except:
+            pass
 
     def _season_table(self, b, parent):
         #
@@ -244,8 +267,12 @@ class Player():
         #
         self.long_descr = {}
         try:
-            last_section = b.Find(parent, "//section[@id='player-description']")
-            entries = b.FindIn(last_section, ".//p[@class='li1']", False)
+            last_section = b.FindIn(parent, "//section[@id='player-description']")
+            entries = []
+            try:
+                entries = b.FindIn(last_section, ".//li[@class='bullist']", False)
+            except:
+                entries = b.FindIn(last_section, ".//p[@class='li1']", False)
             for e in entries:
                 key = strip(b.FindIn(e, './/strong').get_attribute("textContent"))
                 value = strip(e.get_attribute("textContent").replace(key, '')[1:])

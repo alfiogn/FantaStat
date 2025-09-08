@@ -1,8 +1,9 @@
-from .driver import Driver, FANTASTAT_PATH, HOME, DATA_PATH
-from .player import Player, PlayerList
-
 import os, glob, re, pickle, time, pdb, datetime
 import numpy as np
+
+from .driver import Driver, DATA_DIR
+from .player import Player, PlayerList
+
 
 SAFARI = False
 EDGE = False
@@ -19,12 +20,16 @@ LIST_NAME = lambda s: 'list' + s + '.csv'
 PLAYER_LIST_NAME = lambda s: 'players' + s + '.pickle'
 QUOT_URL = 'https://www.fantacalcio.it/quotazioni-fantacalcio'
 
+
 class Scraper():
-    def __init__(self, n_years=2):
+    def __init__(self, n_years=2, basepath='.', verbose=False):
+        self.basepath = basepath
+        self.verbose = verbose
+        self.data_path = os.path.join(self.basepath, DATA_DIR)
         self.browser = None
         self.online = False
-        if not os.path.isdir(DATA_PATH):
-            os.mkdir(DATA_PATH)
+        if not os.path.isdir(self.data_path):
+            os.mkdir(self.data_path)
         self.cur_year = int(str(time.gmtime().tm_year)[-2:])
         now = time.gmtime()
         if datetime.datetime(now.tm_year, now.tm_mon, now.tm_mday) < datetime.datetime(self.cur_year, 7, 28):
@@ -35,18 +40,18 @@ class Scraper():
 
     def CheckOnline(self, url=QUOT_URL):
         if self.browser is None:
-            self.browser = Driver(safari=SAFARI, edge=EDGE, firefox=FIREFOX)
+            self.browser = Driver(path=self.basepath, safari=SAFARI, edge=EDGE, firefox=FIREFOX)
         if not self.online:
             self.browser.Get(url)
             self.browser.CookiesAccept()
             self.online = True
 
-    def ScrapPlayerList(self, update=False):
+    def ScrapPlayerList(self, update=False, dryrun=False):
         self.url_list = {}
         self.name_list = {}
         for y in range(self.cur_year - self.years_to_analyse, self.cur_year + 1):
             season = SEASON(y)
-            filename = os.path.join(DATA_PATH, LIST_NAME(season))
+            filename = os.path.join(self.data_path, LIST_NAME(season))
             if os.path.isfile(filename) and not (update and y == self.cur_year):
                 data = np.loadtxt(filename, dtype=str, delimiter=',')
                 self.url_list[season] = data[:, :2]
@@ -82,19 +87,23 @@ class Scraper():
                         'fvm': fvm.strip().strip('\n')
                     }
                 data = [u + list(self.name_list[season][u[0]].values()) for i,u in enumerate(self.url_list[season])]
-                np.savetxt(filename, data, fmt='%s,%s,%s,%s,%s,%s,%s')
+                if not dryrun:
+                    np.savetxt(filename, data, fmt='%s,%s,%s,%s,%s,%s,%s')
             print("Found", len(self.url_list[season]), "players for season", season)
         print("\n")
 
-    def ScrapPlayerData(self, update=False):
+    def ScrapPlayerData(self, update=False, dryrun=False):
         self.player_list = {}
         for s in self.url_list.keys():
             print('Season', s)
-            backup_file = os.path.join(DATA_PATH, PLAYER_LIST_NAME(s))
+            backup_file = os.path.join(self.data_path, PLAYER_LIST_NAME(s))
             player_list = []
             errors = []
             if os.path.isfile(backup_file) and not (update and s == SEASON(self.cur_year)):
                 player_list = pickle.load(open(backup_file, 'rb'))
+            ## For Debug purposes
+            # if s == SEASON(self.cur_year):
+            #     continue
 
             n = len(self.url_list[s])
             m = len(player_list)
@@ -112,10 +121,10 @@ class Scraper():
                         ok = False
                         p.set_basic(name, basic_info['role'], basic_info['team'], int(basic_info['qi']), int(basic_info['fvm']))
                         try:
-                            ok = p.Scrap(self.browser)
+                            ok = p.Scrap(self.browser, verbose=self.verbose)
                         except:
                             errors.append(u)
-                            break
+                            # break
                         player_urls.insert(i, p.url)
                         player_list.insert(i, p)
                         if not ok:
@@ -126,21 +135,22 @@ class Scraper():
                             print()
                         # pdb.set_trace()
                 player_list = player_list[:n]
-                pickle.dump(player_list, open(backup_file, 'wb'))
-                if errors:
-                    print('Saving a backup...')
-                    raise RuntimeError("Error occurred at scraping of player\n", errors)
+                if not dryrun:
+                    pickle.dump(player_list, open(backup_file, 'wb'))
+                # if errors:
+                #     print('Saving a backup...')
+                #     raise RuntimeError("Error occurred at scraping of player\n", errors)
             self.player_list[s] = PlayerList(self.url_list[s], player_list)
             print("Scrapped", len(player_list), "players for season", s)
         print("\n")
 
-    def ScrapAll(self, updatelist=False, updatedata=False):
-        self.ScrapPlayerList(updatelist)
-        self.ScrapPlayerData(updatedata)
+    def ScrapAll(self, updatelist=False, updatedata=False, dryrun=False):
+        self.ScrapPlayerList(update=updatelist, dryrun=dryrun)
+        self.ScrapPlayerData(update=updatedata, dryrun=dryrun)
 
-    def UpdateAll(self):
+    def UpdateAll(self, dryrun=False):
         for s in self.player_list.keys():
-            backup_file = os.path.join(DATA_PATH, PLAYER_LIST_NAME(s))
+            backup_file = os.path.join(self.data_path, PLAYER_LIST_NAME(s))
             player_list = []
             for p in self.player_list[s].raw_data:
                 if p.name is not None:
@@ -152,7 +162,8 @@ class Scraper():
                 player_list.append(Player(copy=p))
             self.player_list[s] = PlayerList(self.url_list[s], player_list)
             print("Updated", len(player_list), "players for season", s)
-            pickle.dump(player_list, open(backup_file, 'wb'))
+            if not dryrun:
+                pickle.dump(player_list, open(backup_file, 'wb'))
 
     def __getitem__(self, key):
         if isinstance(key, int):

@@ -16,16 +16,17 @@ import pandas as pd
 
 from .player import Player
 
-# FANTASTAT_PATH = os.path.dirname(os.path.abspath(__file__))
-FANTASTAT_PATH = os.path.dirname(os.path.abspath('.'))
-DATA_PATH = os.path.join(FANTASTAT_PATH, 'data')
+
+DATA_DIR = 'data'
 HOME = os.getenv('HOME')
 if HOME is None:
     HOME = os.getenv('HOMEPATH')
 
 class Driver():
-    def __init__(self, safari=False, edge=False, firefox=False, headless=False):
-        self.download_path = DATA_PATH
+    def __init__(self, path='.', safari=False, edge=False, firefox=False, headless=False):
+        self.fantastat_path = os.path.dirname(os.path.abspath(path))
+        self.data_path = os.path.join(self.fantastat_path, DATA_DIR)
+        self.download_path = self.data_path
         if not os.path.exists(self.download_path):
             os.mkdir(self.download_path)
         self.options = None
@@ -89,9 +90,9 @@ class Driver():
             else:
                 return b.find_elements(By.XPATH, xpath)
         except:
-            print(b.current_url)
-            print(xpath)
-            raise Exception()
+            print('\nXPATH not found:', xpath)
+            print(b)
+            raise RuntimeError('XPATH not found')
 
     def Find(self, xpath, single=True, wait=None):
         res = None

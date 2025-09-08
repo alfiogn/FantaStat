@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 pandas = ">=2.2.3,<=2.3"
+xlsxwriter = ">=3.2.0"
+openpyxl = ">=3.1.0"
+spire-xls = ">=15.7.0"
 pandarallel = ">=1.6.5,<2.0.0"
 numpy = ">=2.2.3"
 scipy = ">=1.15.2"
@@ -12,6 +15,8 @@ matplotlib = ">=3.10.0"
 plotly = ">=6.0.0"
 dash = ">=3.1.1"
 selenium = ">=4.34.0"
+flask_cors = ">=6.0.0"
+dash_bootstrap_components = ">=2.0.0"
 FantaStat = {editable = true, path = "."}
 
 [dev-packages]

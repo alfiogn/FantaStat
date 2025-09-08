@@ -74,7 +74,7 @@ if __name__ == "__main__":
         author_email=about["__author_email__"],
         entry_points = {
 			"console_scripts": [
-                # "fslauncher1 = FantaStat.launcher.launcher1:main",
+                "fantastat = FantaStat.launcher.fantastat:main",
 			]
 		},
         url=about["__url__"],

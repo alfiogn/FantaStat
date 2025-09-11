@@ -8,6 +8,7 @@ __flaskcache__
 .*.sw*
 *.vim
 .code-workspace
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

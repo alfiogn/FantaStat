@@ -63,6 +63,7 @@ class FantaStat():
             pass
         else:
             self._add_stats(days=days)
+            self.dump(dayslist=days)
         return self.stats[days]
 
     def _add_stats(self, days="cur"):
@@ -91,33 +92,48 @@ class FantaStat():
             label = row['Label']
             if p in old_players and db[p].db is not None:
                 player: Player = db[p]
-                dbp = player.db.query('Presenza != "Inutilizzato"')
+                dbp = player.db
                 if dbp.shape[0]:
                     days_count = dbp.shape[0]
+                    dbp = player.db.query('Presenza != "Inutilizzato"')
                     if isinstance(days, int):
                         for y in range(y0 + 1, self.raw.years_to_analyse + 1):
                             if days_count >= days:
                                 break
                             old_db = self.raw.player_list[SEASON(self.raw.cur_year - y)]
                             if p in old_db.map.keys() and old_db[p].db is not None:
-                                tmp_db = old_db[p].db.query('Presenza != "Inutilizzato"')
+                                tmp_db = old_db[p].db
                                 if (days_count + tmp_db.shape[0]) >= days:
+                                    days_count = days
+                                    tmp_db = old_db[p].db.query('Presenza != "Inutilizzato"')
                                     dbp = pd.concat([tmp_db.iloc[-(days - days_count):, :], dbp])
                                 else:
+                                    days_count += tmp_db.shape[0]
+                                    tmp_db = old_db[p].db.query('Presenza != "Inutilizzato"')
                                     dbp = pd.concat([tmp_db, dbp])
-                                days_count = dbp.shape[0]
 
-                    entry = [
-                        fascia, budget, cur_player.role.upper(), p.title(), cur_player.team.title(), cur_player.quotc,
-                        dbp['Quotazione'].iloc[0], dbp['Quotazione'].iloc[-1], cur_player.fvmc/1000*ASTA_BUDGET,
-                        np.round(dbp['Voto'].mean(), 2), np.round(np.sum(dbp['Voto'] >= 6)/dbp.shape[0], 2),
-                        np.round(np.sum(dbp['Voto'] >= 6.5)/dbp.shape[0], 2),
-                        np.round(dbp['FantaVoto'].mean(), 2), np.round(dbp['Bonus'].mean(), 2),
-                        dbp['Gol'].sum(), dbp['Assist'].sum(),
-                        np.round(np.sum(dbp['GolFatti'] > dbp['GolSubiti'])/dbp.shape[0], 2),
-                        dbp.shape[0], label, note
-                    ]
-                    self.stats[days_key].loc[len(self.stats[days_key].index), :] = entry
+                    if dbp.shape[0]:
+                        entry = [
+                            fascia, budget, cur_player.role.upper(), p.title(), cur_player.team.title(), cur_player.quotc,
+                            dbp['Quotazione'].iloc[0], dbp['Quotazione'].iloc[-1], cur_player.fvmc/1000*ASTA_BUDGET,
+                            np.round(dbp['Voto'].mean(), 2), np.round(np.sum(dbp['Voto'] >= 6)/dbp.shape[0], 2),
+                            np.round(np.sum(dbp['Voto'] >= 6.5)/dbp.shape[0], 2),
+                            np.round(dbp['FantaVoto'].mean(), 2), np.round(dbp['Bonus'].mean(), 2),
+                            dbp['Gol'].sum(), dbp['Assist'].sum(),
+                            np.round(np.sum(dbp['GolFatti'] > dbp['GolSubiti'])/dbp.shape[0], 2),
+                            dbp.shape[0], label, note
+                        ]
+                        self.stats[days_key].loc[len(self.stats[days_key].index), :] = entry
+                    else:
+                        entry = [
+                            fascia, budget, cur_player.role.upper(), p.title(), cur_player.team.title(), cur_player.quotc,
+                            None, None, cur_player.fvmc/1000*ASTA_BUDGET,
+                            None, None, None,
+                            None, None,
+                            None, None,
+                            None, 0, label, note
+                        ]
+                        self.stats[days_key].loc[len(self.stats[days_key].index), :] = entry
                 else:
                     entry = [
                         fascia, budget, cur_player.role.upper(), p.title(), cur_player.team.title(), cur_player.quotc,
@@ -140,8 +156,13 @@ class FantaStat():
                 self.stats[days_key].loc[len(self.stats[days_key].index), :] = entry
             self.stats[days_key].sort_values(by=['Squadra', 'Budget'], ascending=[True, False])
 
-    def dump(self):
-        for days in self.stats.keys():
+    def dump(self, dayslist=None):
+        if dayslist is None:
+            dayslist = list(self.stats.keys())
+        elif isinstance(dayslist, str) or isinstance(dayslist, int):
+            dayslist = [dayslist]
+
+        for days in dayslist:
             new_file = os.path.join(self.basepath, DATA_DIR, f'Stats_{days}.xlsx')
             writer = pd.ExcelWriter(new_file, engine='xlsxwriter', mode='w')
             workbook = writer.book

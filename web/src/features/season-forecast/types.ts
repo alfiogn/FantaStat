@@ -1,0 +1,4 @@
+export type ForecastModel = "iid_bootstrap" | "markov_memory";
+export interface ForecastRequest { model: ForecastModel; simulations: number; seed?: number; history_years: number[]; last_n_played?: number; venue_conditioning: boolean; memory: number; state_metric: string; state_edges: number[]; laplace: number; quantiles: number[]; metrics: string[]; }
+export interface MetricForecast { current: number; future_mean: number | null; final_mean: number | null; final_std: number | null; quantiles: Record<string, number | null>; }
+export interface ForecastResponse { player: string; model: ForecastModel; training_years: number[]; fit: { training_rows: number; future_fixtures: number; warnings: string[]; states: string[] }; metrics: Record<string, MetricForecast>; fixtures: Record<string, unknown>[]; disclaimer: string; }

@@ -8,13 +8,23 @@ version = "0.2.0"
 description = "Fantacalcio analytics and season forecasting backend"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["fastapi>=0.111,<1", "uvicorn[standard]>=0.30,<1", "pandas>=2.1,<3", "numpy>=1.26,<3", "pydantic>=2.7,<3", "requests", "beautifulsoup4"]
+dependencies = [
+  "fastapi>=0.111,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "pandas>=2.1,<3",
+  "numpy>=1.26,<3",
+  "pydantic>=2.7,<3",
+  "requests",
+  "beautifulsoup4",
+  "pymongo>=4.8,<5",
+  "pyyaml>=6,<7"
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9", "httpx>=0.27,<1"]
 
 [project.scripts]
-fantastat-api = "fantastat.cli:main"
+fantastat = "fantastat.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

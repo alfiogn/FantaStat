@@ -7,11 +7,17 @@ window.Fantastat = (() => {
     function showLoader() {
         pendingRequests++;
 
-        spinnerTimer = setTimeout(() => {
-            document
-                .getElementById("loadingOverlay")
-                ?.classList.remove("hidden");
-        }, 150);
+        if (spinnerTimer === null) {
+            spinnerTimer = setTimeout(() => {
+                spinnerTimer = null;
+
+                if (pendingRequests > 0) {
+                    document
+                        .getElementById("loadingOverlay")
+                        ?.classList.remove("hidden");
+                }
+            }, 150);
+        }
     }
 
     function hideLoader() {
@@ -20,7 +26,10 @@ window.Fantastat = (() => {
         if (pendingRequests <= 0) {
             pendingRequests = 0;
 
-            clearTimeout(spinnerTimer);
+            if (spinnerTimer !== null) {
+                clearTimeout(spinnerTimer);
+                spinnerTimer = null;
+            }
 
             document
                 .getElementById("loadingOverlay")
@@ -126,12 +135,19 @@ window.Fantastat = (() => {
     function roleClass(r) { return `role role-${String(r || 'x').toLowerCase()}` }
     function compareIds() { return JSON.parse(localStorage.getItem('fantastat.compareIds') || '[]') }
     function saveCompareIds(ids) {
-        const clean = [...new Set(ids.filter(Boolean).map(String))].slice(0, 6);
-        localStorage.setItem('fantastat.compareIds', JSON.stringify(clean));
-        updateCompareNav();
-        return clean
-    }
+        const clean =
+            [...new Set(ids.filter(Boolean).map(String))]
+                .slice(0, 80);
 
+        localStorage.setItem(
+            'fantastat.compareIds',
+            JSON.stringify(clean)
+        );
+
+        updateCompareNav();
+
+        return clean;
+    }
     function addCompare(id) {
         const ids = compareIds();
         if (!ids.includes(String(id))) ids.push(String(id));
@@ -139,6 +155,12 @@ window.Fantastat = (() => {
     }
 
     function clearCompare() { return saveCompareIds([]) }
+    function removeCompare(id) {
+        const ids = compareIds()
+            .filter(existingId => String(existingId) !== String(id));
+
+        return saveCompareIds(ids);
+    }
     function compareUrl(ids = compareIds()) {
         const u = new URL('/compare', location.origin);
         ids.forEach(id => u.searchParams.append('id', id));
@@ -178,7 +200,21 @@ window.Fantastat = (() => {
         })
     }
     return {
-        getJSON, withSeason, initSeasonSelector, selectedSeason, selectedDays, fmt, roleClass, addCompare, clearCompare, compareIds, compareUrl, updateCompareNav, toast, chartLine
+        getJSON,
+        withSeason,
+        initSeasonSelector,
+        selectedSeason,
+        selectedDays,
+        fmt,
+        roleClass,
+        addCompare,
+        removeCompare,
+        clearCompare,
+        compareIds,
+        compareUrl,
+        updateCompareNav,
+        toast,
+        chartLine
     }
 })();
 

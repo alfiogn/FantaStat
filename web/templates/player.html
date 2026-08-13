@@ -1,1 +1,116 @@
-{% extends "base.html" %}{% block title %}Player | Fantastat{% endblock %}{% block body %}<section class="hero"><div><p class="eyebrow">Player analytics</p><h1 id="playerName">Loading...</h1><p class="muted" id="playerMeta"></p></div><div class="hero-actions"><button class="btn secondary" id="addCompareBtn">Add to compare</button><a class="btn primary" id="compareLink" href="/compare">Compare</a></div></section><section class="stats-grid"><article class="stat-card"><span>W QA</span><strong id="pCurrentPrice">-</strong></article><article class="stat-card"><span>W FVM</span><strong id="pFvm">-</strong></article><article class="stat-card"><span>W FV</span><strong id="pAvgFv">-</strong></article><article class="stat-card"><span>W Goals</span><strong id="pGoals">-</strong></article><article class="stat-card"><span>W Assists</span><strong id="pAssists">-</strong></article></section><section class="grid two-cols"><article class="panel"><div class="panel-header"><h2>Ratings</h2></div><canvas id="ratingsChart" height="260"></canvas></article><article class="panel"><div class="panel-header"><h2>Quotation</h2></div><canvas id="priceChart" height="260"></canvas></article></section><section class="grid two-cols"><article class="panel"><div class="panel-header"><h2>Cumulative contributions</h2></div><canvas id="contribChart" height="260"></canvas></article><article class="panel"><div class="panel-header"><h2>Availability</h2></div><div id="availability" class="status-list"></div></article></section><section class="panel table-panel"><div class="panel-header"><h2>Window records</h2><span id="playerTableInfo" class="muted"></span></div><div class="table-wrap"><table class="data-table" id="recordsTable"><thead><tr><th>MD</th><th>Match</th><th>Status</th><th class="num">Voto</th><th class="num">FV</th><th class="num">G</th><th class="num">A</th><th class="num">Q</th></tr></thead><tbody></tbody></table></div></section>{% endblock %}{% block scripts %}<script>window.FANTASTAT_PLAYER_ID={{ player_id|tojson }};</script><script src="{{ url_for('static', filename='js/player.js') }}" defer></script>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Player | Fantastat{% endblock %}
+{% block body %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">Player analytics</p>
+        <h1 id="playerName">Loading...</h1>
+        <p class="muted" id="playerMeta"></p>
+    </div>
+    <div class="hero-actions"><button class="btn secondary" id="addCompareBtn">Add to compare</button><a
+            class="btn primary" id="compareLink" href="/compare">Compare</a></div>
+</section>
+<section class="panel">
+  <div class="panel-header">
+    <h2>Window distributions</h2>
+    <span class="muted">Per-game probabilities inside selected window</span>
+  </div>
+
+  <div class="distribution-grid">
+    <article class="distribution-card">
+      <h3>Goals</h3>
+      <canvas id="distGoalsChart" height="180"></canvas>
+    </article>
+
+    <article class="distribution-card">
+      <h3>Assists</h3>
+      <canvas id="distAssistsChart" height="180"></canvas>
+    </article>
+
+    <article class="distribution-card">
+      <h3>Voto</h3>
+      <canvas id="distVotoChart" height="180"></canvas>
+    </article>
+
+    <article class="distribution-card">
+      <h3>Fantavoto</h3>
+      <canvas id="distFantavotoChart" height="180"></canvas>
+    </article>
+
+    <article class="distribution-card">
+      <h3>Yellow card</h3>
+      <canvas id="distYellowChart" height="180"></canvas>
+    </article>
+
+    <article class="distribution-card">
+      <h3>Red card</h3>
+      <canvas id="distRedChart" height="180"></canvas>
+    </article>
+
+    <article class="distribution-card">
+      <h3>Result</h3>
+      <canvas id="distResultChart" height="180"></canvas>
+    </article>
+
+    <article class="distribution-card">
+      <h3>Status</h3>
+      <canvas id="distStatusChart" height="180"></canvas>
+    </article>
+  </div>
+</section>
+<section class="stats-grid">
+    <article class="stat-card"><span>W QA</span><strong id="pCurrentPrice">-</strong></article>
+    <article class="stat-card"><span>W FVM</span><strong id="pFvm">-</strong></article>
+    <article class="stat-card"><span>W FV</span><strong id="pAvgFv">-</strong></article>
+    <article class="stat-card"><span>W Goals</span><strong id="pGoals">-</strong></article>
+    <article class="stat-card"><span>W Assists</span><strong id="pAssists">-</strong></article>
+</section>
+<section class="grid two-cols">
+    <article class="panel">
+        <div class="panel-header">
+            <h2>Ratings</h2>
+        </div><canvas id="ratingsChart" height="260"></canvas>
+    </article>
+    <article class="panel">
+        <div class="panel-header">
+            <h2>Quotation</h2>
+        </div><canvas id="priceChart" height="260"></canvas>
+    </article>
+</section>
+<section class="grid two-cols">
+    <article class="panel">
+        <div class="panel-header">
+            <h2>Cumulative contributions</h2>
+        </div><canvas id="contribChart" height="260"></canvas>
+    </article>
+    <article class="panel">
+        <div class="panel-header">
+            <h2>Availability</h2>
+        </div>
+        <div id="availability" class="status-list"></div>
+    </article>
+</section>
+<section class="panel table-panel">
+    <div class="panel-header">
+        <h2>Window records</h2><span id="playerTableInfo" class="muted"></span>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table" id="recordsTable">
+            <thead>
+                <tr>
+                    <th>MD</th>
+                    <th>Match</th>
+                    <th>Status</th>
+                    <th class="num">Voto</th>
+                    <th class="num">FV</th>
+                    <th class="num">G</th>
+                    <th class="num">A</th>
+                    <th class="num">Q</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</section>{% endblock %}{% block scripts %}
+<script>window.FANTASTAT_PLAYER_ID = {{ player_id | tojson }};</script>
+<script src="{{ url_for('static', filename='js/player.js') }}" defer></script>{% endblock %}

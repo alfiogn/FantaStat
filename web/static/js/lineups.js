@@ -96,8 +96,21 @@ function renderTeam(team) {
 
   return `<article class="lineup-card">
     <div class="lineup-header">
-      <div><h2>${team.team}</h2><p class="muted">${team.coach || ''}</p></div>
-      <span class="module-pill">${team.module_text || module}</span>
+      <div>
+        <h2>${team.team}</h2>
+        <p class="muted">${team.coach || ''}</p>
+      </div>
+
+      <div class="lineup-header-actions">
+        <span class="module-pill">${team.module_text || module}</span>
+        <button
+          class="btn small secondary"
+          onclick="addTeamToCompare('${escapeJs(team.team)}')"
+          title="Add starters, ballottaggi, penalty takers and set-piece takers"
+        >
+          Compare all
+        </button>
+      </div>
     </div>
     <div class="pitch-wrap">
       <div class="pitch">
@@ -147,6 +160,72 @@ function findPlayer(name) {
   return playerIndex.get(norm(name)) || playerIndex.get(norm(name).replace(/\./g, '')) || null;
 }
 
+function allTeamComparisonPlayers(team) {
+    const names = [];
+
+    for (const player of flattenGroups(team.groups || [])) {
+        names.push(player);
+    }
+
+    for (const text of [
+        team.ballottaggi || '',
+        team.rigoristi || '',
+        team.calci_da_fermo || ''
+    ]) {
+        for (const chunk of text.split(/[;,]/)) {
+            for (const name of chunk.split('/')) {
+                const cleaned = name
+                    .replace(/\(.*?\)/g, '')
+                    .trim();
+
+                if (cleaned) {
+                    names.push(cleaned);
+                }
+            }
+        }
+    }
+
+    return [...new Set(names)];
+}
+
+function addTeamToCompare(teamName) {
+    const team = (lineupPayload?.teams || [])
+        .find(t => t.team === teamName);
+
+    if (!team) {
+        return Fantastat.toast(`Team not found: ${teamName}`);
+    }
+
+    const names = allTeamComparisonPlayers(team);
+    const matched = [];
+    const missing = [];
+
+    for (const name of names) {
+        const player = findPlayer(name);
+
+        if (player?.player_id) {
+            matched.push(player.player_id);
+        } else {
+            missing.push(name);
+        }
+    }
+
+    const current = Fantastat.compareIds();
+    const next = [...new Set([...current, ...matched.map(String)])];
+
+    localStorage.setItem(
+        'fantastat.compareIds',
+        JSON.stringify(next)
+    );
+
+    Fantastat.updateCompareNav();
+
+    Fantastat.toast(
+        `Added ${matched.length} players` +
+        (missing.length ? `, ${missing.length} not matched` : '')
+    );
+}
+
 function openLineupPlayer(name) {
   const player = findPlayer(name);
   if (!player) return Fantastat.toast(`No Mongo match for ${name}`);
@@ -174,6 +253,7 @@ function escapeJs(value) {
 
 window.openLineupPlayer = openLineupPlayer;
 window.compareLineupPlayer = compareLineupPlayer;
+window.addTeamToCompare = addTeamToCompare;
 
 document.addEventListener(
   'DOMContentLoaded',

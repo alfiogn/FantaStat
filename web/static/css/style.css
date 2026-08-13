@@ -700,3 +700,81 @@ a:hover {
         height: 2.2rem
     }
 }
+
+.lineup-header-actions {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.role-filter-bar {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.role-filter-bar label {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+
+    background: rgba(148, 163, 184, .12);
+    border: 1px solid var(--border);
+    border-radius: .65rem;
+
+    padding: .45rem .65rem;
+
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.compare-card {
+    position: relative;
+}
+
+.compare-remove {
+    position: absolute;
+    top: .6rem;
+    right: .6rem;
+
+    width: 1.7rem;
+    height: 1.7rem;
+
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 999px;
+
+    background: rgba(239, 68, 68, .16);
+    color: #fecaca;
+
+    font-size: 1.1rem;
+    font-weight: 900;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.compare-remove:hover {
+    background: rgba(239, 68, 68, .35);
+}
+
+.distribution-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.distribution-card {
+    background: rgba(15, 23, 42, .65);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1rem;
+}
+
+.distribution-card h3 {
+    margin: 0 0 .75rem;
+    font-size: .95rem;
+    color: #dbeafe;
+}

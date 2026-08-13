@@ -1,5 +1,6 @@
 'use strict';
 let rows = [], topFvmChart = null, roleChart = null;
+let quotationRequestId = 0;
 async function loadDashboard() {
     const f = await Fantastat.getJSON(Fantastat.withSeason('/api/filters'));
     fillSelect('teamFilter', f.teams);
@@ -12,12 +13,41 @@ function fillSelect(id, values) {
     e.value = old
 }
 async function loadQuotations() {
-    const p = { search: document.getElementById('searchInput').value.trim(), team: document.getElementById('teamFilter').value, role: document.getElementById('roleFilter').value, sort: document.getElementById('sortSelect').value, limit: 1000 };
-    const d = await Fantastat.getJSON(Fantastat.withSeason('/api/quotations', p));
-    rows = d.rows || [];
+    const requestId = ++quotationRequestId;
+
+    const params = {
+        search: document.getElementById('searchInput').value.trim(),
+        team: document.getElementById('teamFilter').value,
+        role: document.getElementById('roleFilter').value,
+        sort: document.getElementById('sortSelect').value,
+        limit: 1000,
+    };
+
+    const data =
+        await Fantastat.getJSON(
+            Fantastat.withSeason('/api/quotations', params)
+        );
+
+    if (requestId !== quotationRequestId) {
+        return;
+    }
+
+    rows = data.rows || [];
+
     renderStats(rows);
-    renderTable(rows, d);
-    renderCharts(rows)
+    renderTable(rows, data);
+    renderCharts(rows);
+}
+function debounce(fn, delay = 200) {
+    let timer = null;
+
+    return (...args) => {
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+            fn(...args);
+        }, delay);
+    };
 }
 function renderStats(data) {
     statPlayers.textContent = data.length;
@@ -73,13 +103,56 @@ function addToCompare(id) {
     Fantastat.toast(`Added ${id}
 to compare`)
 }
+function addVisibleRowsToCompare() {
+    const ids = rows
+        .map(row => row.player_id)
+        .filter(Boolean)
+        .map(String);
+
+    if (!ids.length) {
+        Fantastat.toast('No visible players to add');
+        return;
+    }
+
+    const current = Fantastat.compareIds();
+    const next = [...new Set([...current, ...ids])];
+
+    localStorage.setItem(
+        'fantastat.compareIds',
+        JSON.stringify(next)
+    );
+
+    Fantastat.updateCompareNav();
+
+    Fantastat.toast(
+        `Added ${ids.length} visible players to compare`
+    );
+}
 window.addToCompare = addToCompare;
 document.addEventListener('DOMContentLoaded', async () => {
     await Fantastat.initSeasonSelector(loadDashboard);
-    ['searchInput', 'teamFilter', 'roleFilter', 'sortSelect'].forEach(id => {
-        document.getElementById(id).addEventListener('input', loadQuotations);
-        document.getElementById(id).addEventListener('change', loadQuotations)
-    });
+    const debouncedLoadQuotations =
+    debounce(loadQuotations, 200);
+
+    document
+        .getElementById('searchInput')
+        .addEventListener('input', debouncedLoadQuotations);
+
+    document
+        .getElementById('teamFilter')
+        .addEventListener('change', loadQuotations);
+
+    document
+        .getElementById('roleFilter')
+        .addEventListener('change', loadQuotations);
+
+    document
+        .getElementById('sortSelect')
+        .addEventListener('change', loadQuotations);
+    
+    document
+        .getElementById('addVisibleCompareBtn')
+        .onclick = addVisibleRowsToCompare;
     openCompareBtn.onclick = () => location.href = Fantastat.compareUrl();
     clearCompareBtn.onclick = () => {
         Fantastat.clearCompare();

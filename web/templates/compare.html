@@ -1,1 +1,79 @@
-{% extends "base.html" %}{% block title %}Compare | Fantastat{% endblock %}{% block body %}<section class="hero"><div><p class="eyebrow">Comparison</p><h1>Compare players</h1><p class="muted">Uses the global last-N-days window.</p></div></section><section class="panel"><div class="panel-header"><h2>Selected players</h2><button class="btn secondary" id="clearComparePageBtn">Clear</button></div><div id="compareCards" class="compare-cards"></div></section><section class="grid two-cols"><article class="panel"><div class="panel-header"><h2>Fantavoto trend</h2></div><canvas id="compareFvChart" height="260"></canvas></article><article class="panel"><div class="panel-header"><h2>Quotation trend</h2></div><canvas id="comparePriceChart" height="260"></canvas></article></section><section class="panel table-panel"><div class="panel-header"><h2>Metric comparison</h2></div><div class="table-wrap"><table class="data-table" id="metricsTable"><thead></thead><tbody></tbody></table></div></section>{% endblock %}{% block scripts %}<script>window.FANTASTAT_COMPARE_IDS={{ player_ids|tojson }};</script><script src="{{ url_for('static', filename='js/compare.js') }}" defer></script>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Compare | Fantastat{% endblock %}
+{% block body %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">Comparison</p>
+        <h1>Compare players</h1>
+        <p class="muted">Uses the global last-N-days window.</p>
+    </div>
+</section>
+<section class="panel filters-panel">
+  <div class="field">
+    <label>Roles</label>
+    <div class="role-filter-bar">
+      <label><input type="checkbox" class="compare-role-filter" value="P" checked> P</label>
+      <label><input type="checkbox" class="compare-role-filter" value="D" checked> D</label>
+      <label><input type="checkbox" class="compare-role-filter" value="C" checked> C</label>
+      <label><input type="checkbox" class="compare-role-filter" value="A" checked> A</label>
+    </div>
+  </div>
+</section>
+<section class="panel">
+    <div class="panel-header">
+        <h2>Selected players</h2><button class="btn secondary" id="clearComparePageBtn">Clear</button>
+    </div>
+    <div id="compareCards" class="compare-cards"></div>
+</section>
+<section class="panel">
+  <div class="panel-header">
+    <h2>Distribution comparison</h2>
+    <span class="muted">Role filters above also affect these charts</span>
+  </div>
+
+  <div class="field">
+    <label for="compareDistributionMetric">Metric</label>
+    <select id="compareDistributionMetric" class="select">
+      <option value="goals">Goals</option>
+      <option value="assists">Assists</option>
+      <option value="voto">Voto</option>
+      <option value="fantavoto">Fantavoto</option>
+      <option value="yellow_card">Yellow card</option>
+      <option value="red_card">Red card</option>
+      <option value="result">Result</option>
+      <option value="status">Status</option>
+    </select>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="compareDistributionChart" height="280"></canvas>
+  </div>
+</section>
+<section class="grid two-cols">
+    <article class="panel">
+        <div class="panel-header">
+            <h2>Fantavoto trend</h2>
+        </div><canvas id="compareFvChart" height="260"></canvas>
+    </article>
+    <article class="panel">
+        <div class="panel-header">
+            <h2>Quotation trend</h2>
+        </div><canvas id="comparePriceChart" height="260"></canvas>
+    </article>
+</section>
+<section class="panel table-panel">
+    <div class="panel-header">
+        <h2>Metric comparison</h2>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table" id="metricsTable">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>window.FANTASTAT_COMPARE_IDS = {{ player_ids | tojson }};</script>
+<script src="{{ url_for('static', filename='js/compare.js') }}" defer></script>
+{% endblock %}

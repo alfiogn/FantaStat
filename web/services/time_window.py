@@ -213,7 +213,233 @@ class TimeWindowService:
             "window_start_matchday": first_record.get("window_matchday") if first_record else None,
             "window_end_season": last_record.get("window_season") if last_record else None,
             "window_end_matchday": last_record.get("window_matchday") if last_record else None,
+            "window_distributions": self.distributions_from_records(records),
         }
+
+    def distributions_from_records(self, records: list[dict[str, Any]]) -> dict[str, Any]:
+        """Probability distributions over the rolling window.
+
+        Notes:
+        - goals use scoredGoals unless ownGoals > 0 and scoredGoals == 0, then value is -ownGoals
+        - voto and fantavoto ignore missing values
+        - yellow/red cards are binary yes/no
+        - result uses win: 1 win, 0 draw, -1 loss
+        - status uses raw status label with common ordering
+        """
+        return {
+            "goals": self._integer_distribution(
+                [self._goal_bucket(record) for record in records],
+                minimum=-1,
+            ),
+            "assists": self._integer_distribution(
+                [self._integer(record.get("assists")) or 0 for record in records],
+                minimum=0,
+            ),
+            "voto": self._half_step_distribution(
+                [self._number(record.get("voto")) for record in records],
+                start=0,
+                stop=10,
+            ),
+            "fantavoto": self._half_step_distribution(
+                [self._number(record.get("fantavoto")) for record in records],
+                start=-3,
+                stop=15,
+            ),
+            "yellow_card": self._binary_distribution(
+                [bool((self._integer(record.get("yellowCards")) or 0) > 0) for record in records],
+                yes_label="Yellow",
+                no_label="No yellow",
+            ),
+            "red_card": self._binary_distribution(
+                [bool((self._integer(record.get("redCards")) or 0) > 0) for record in records],
+                yes_label="Red",
+                no_label="No red",
+            ),
+            "result": self._categorical_distribution(
+                [self._result_label(record.get("win")) for record in records],
+                order=["Win", "Draw", "Loss", "Unknown"],
+            ),
+            "status": self._categorical_distribution(
+                [self._status_label(record.get("status")) for record in records],
+                order=["Titolare", "Entrato", "Inutilizzato", "Infortunato", "Squalificato", "Other"],
+            ),
+        }
+
+
+    def _goal_bucket(self, record: dict[str, Any]) -> int:
+        scored = self._integer(record.get("scoredGoals")) or 0
+        own = self._integer(record.get("ownGoals")) or 0
+
+        if own > 0 and scored == 0:
+            return -own
+
+        return scored
+
+
+    def _integer_distribution(
+        self,
+        values: list[int | None],
+        *,
+        minimum: int = 0,
+    ) -> list[dict[str, Any]]:
+        clean = [int(value) for value in values if value is not None]
+        if not clean:
+            return []
+
+        max_value = max(max(clean), minimum)
+        min_value = min(min(clean), minimum)
+
+        counts = {
+            value: clean.count(value)
+            for value in range(min_value, max_value + 1)
+        }
+
+        return self._distribution_payload(counts)
+
+
+    def _half_step_distribution(
+        self,
+        values: list[int | float | None],
+        *,
+        start: float,
+        stop: float,
+    ) -> list[dict[str, Any]]:
+        clean = []
+
+        for value in values:
+            if value is None:
+                continue
+
+            bucket = round(float(value) * 2) / 2
+            bucket = max(start, min(stop, bucket))
+            clean.append(bucket)
+
+        if not clean:
+            return []
+
+        keys = []
+        current = start
+
+        while current <= stop + 1e-9:
+            keys.append(round(current, 1))
+            current += 0.5
+
+        counts = {
+            key: clean.count(key)
+            for key in keys
+        }
+
+        return self._distribution_payload(counts)
+
+
+    def _binary_distribution(
+        self,
+        values: list[bool],
+        *,
+        yes_label: str,
+        no_label: str,
+    ) -> list[dict[str, Any]]:
+        counts = {
+            no_label: values.count(False),
+            yes_label: values.count(True),
+        }
+
+        return self._distribution_payload(counts)
+
+
+    def _categorical_distribution(
+        self,
+        values: list[str],
+        *,
+        order: list[str],
+    ) -> list[dict[str, Any]]:
+        counts = {key: 0 for key in order}
+
+        for value in values:
+            key = value if value in counts else "Other"
+            counts[key] = counts.get(key, 0) + 1
+
+        return self._distribution_payload(counts)
+
+
+    def _distribution_payload(
+        self,
+        counts: dict[Any, int],
+    ) -> list[dict[str, Any]]:
+        total = sum(counts.values())
+
+        if total <= 0:
+            return [
+                {
+                    "value": value,
+                    "label": self._format_distribution_label(value),
+                    "count": count,
+                    "probability": 0.0,
+                    "percentage": 0.0,
+                }
+                for value, count in counts.items()
+            ]
+
+        return [
+            {
+                "value": value,
+                "label": self._format_distribution_label(value),
+                "count": count,
+                "probability": count / total,
+                "percentage": round(100.0 * count / total, 2),
+            }
+            for value, count in counts.items()
+        ]
+
+
+    def _result_label(self, value: Any) -> str:
+        number = self._integer(value)
+
+        if number == 1:
+            return "Win"
+
+        if number == 0:
+            return "Draw"
+
+        if number == -1:
+            return "Loss"
+
+        return "Unknown"
+
+
+    def _status_label(self, value: Any) -> str:
+        text = str(value or "").strip()
+
+        if text in {
+            "Titolare",
+            "Entrato",
+            "Inutilizzato",
+            "Infortunato",
+            "Squalificato",
+        }:
+            return text
+
+        return "Other"
+
+
+    def _integer(self, value: Any) -> int | None:
+        number = self._number(value)
+
+        if number is None:
+            return None
+
+        if isinstance(number, float) and not number.is_integer():
+            return None
+
+        return int(number)
+
+
+    @staticmethod
+    def _format_distribution_label(value: Any) -> str:
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+
+        return str(value)
 
     def _known_seasons(self) -> list[int]:
         seasons = set(self.quotation_repo.seasons())

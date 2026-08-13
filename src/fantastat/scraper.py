@@ -582,6 +582,8 @@ SERIE_A_API_BASE_URL = "https://api-sdp.legaseriea.it/v1/serie-a/football"
 SERIE_A_COMPETITION_ID = "serie-a::Football_Competition::ec93b94f74294dc98ab5bcfd67fc0d88"
 VALID_RECORD_TYPES = {"serie_a_calendar", "player_page"}
 
+PROBABLE_LINEUPS = "https://www.fantacalcio.it/news/calcio-italia/06_08_2026/asta-fantacalcio-le-probabili-formazioni-della-serie-a-enilive-2026-27-495558"
+
 TEAM_ALIASES = {
     "ata": "atalanta", "atlanta": "atalanta",
     "bol": "bologna", "cag": "cagliari", "com": "como",
@@ -906,6 +908,7 @@ class ScraperConfig:
     reference_year: int
     base_url: str = DEFAULT_BASE_URL
     cache_dir: Path | str = Path("cache")
+    lineups_output_json: Path | str = Path("cache/lineups.json")
     max_cache_age: timedelta = timedelta(days=1)
     timeout: int = DEFAULT_TIMEOUT
     headers: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_HEADERS))
@@ -936,6 +939,10 @@ class ScraperConfig:
     @property
     def calendar_cache_file(self) -> Path:
         return self.cache_path / f"calendar{self.reference_year}.json"
+
+    @property
+    def lineups_cache_file(self) -> Path:
+        return Path(self.lineups_output_json)
 
 
 class FileCache:
@@ -1130,6 +1137,79 @@ class SerieAApiScraper:
         return _first_present(team, "name", "officialName", "teamName", "shortName", "displayName")
 
 
+class LineupsScraper:
+    """Parse Fantacalcio probable-formation article HTML.
+
+    Extracts only the useful auction data:
+    team, coach, module, starting XI, ballottaggi, penalty takers and set-piece takers.
+    Ads and article prose are ignored.
+    """
+
+    def parse_html(self, html: str, *, season: int | None = None, source: str | None = None) -> dict[str, Any]:
+        soup = BeautifulSoup(html, "html.parser")
+        teams = []
+
+        for aside in soup.select("aside.text-type-aside"):
+            heading = aside.find("h2")
+            if not heading:
+                continue
+
+            raw = {"team": self._clean(heading.get_text(" ", strip=True))}
+
+            for p in aside.find_all("p"):
+                strong = p.find("strong")
+                if not strong:
+                    continue
+                key = self._clean(strong.get_text(" ", strip=True)).strip(":").casefold()
+                text = self._clean(p.get_text(" ", strip=True))
+                value = text.split(":", 1)[1].strip() if ":" in text else text.replace(strong.get_text(" ", strip=True), "").strip(" :")
+                raw[key] = self._clean(value)
+
+            lineup_text = re.sub(
+                r"^\(da dx a sx\):\s*",
+                "",
+                raw.get("probabile formazione", ""),
+                flags=re.IGNORECASE,
+            )
+            groups = self._split_lineup(lineup_text)
+            module_text = raw.get("modulo", "")
+            module = module_text.split()[0] if module_text else None
+
+            teams.append(
+                {
+                    "team": raw["team"],
+                    "coach": raw.get("allenatore"),
+                    "module": module,
+                    "module_text": module_text,
+                    "lineup_text": lineup_text,
+                    "groups": groups,
+                    "players": [player for group in groups for player in group],
+                    "ballottaggi": raw.get("ballottaggi"),
+                    "rigoristi": raw.get("rigoristi"),
+                    "calci_da_fermo": raw.get("calci da fermo"),
+                }
+            )
+
+        return {"season": season, "source": source, "teams": teams}
+
+    def parse_file(self, path: str | Path, *, season: int | None = None) -> dict[str, Any]:
+        path = Path(path)
+        return self.parse_html(path.read_text(encoding="utf-8"), season=season, source=str(path))
+
+    @staticmethod
+    def _split_lineup(text: str) -> list[list[str]]:
+        groups = []
+        for part in text.split(";"):
+            players = [p.strip(" .") for p in part.split(",") if p.strip(" .")]
+            if players:
+                groups.append(players)
+        return groups
+
+    @staticmethod
+    def _clean(value: Any) -> str:
+        return re.sub(r"\s+", " ", str(value or "").replace("\xa0", " ")).strip()
+    
+
 class FantacalcioRunner:
     """
     High-level orchestration.
@@ -1267,6 +1347,7 @@ def run(
     reference_year: int,
     *,
     cache_dir: str | Path = "cache",
+    lineups_output_json: str | Path = "web/static/data/lineups.json",
     proxies: dict[str, str] | None = None,
     headers: dict[str, str] | None = None,
     timeout: int = DEFAULT_TIMEOUT,
@@ -1277,6 +1358,7 @@ def run(
     config = ScraperConfig(
         reference_year=reference_year,
         cache_dir=cache_dir,
+        lineups_output_json=lineups_output_json,
         proxies=proxies,
         headers=headers or dict(DEFAULT_HEADERS),
         timeout=timeout,
@@ -1290,6 +1372,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Scrape Fantacalcio quotations and player stats.")
     parser.add_argument("year", type=int, help="Reference year, e.g. 2025 -> season 2024-25")
     parser.add_argument("--cache-dir", default="cache", help="Local cache directory")
+    parser.add_argument(
+        "--lineups-output-json",
+        dest="lineups_output_json",
+        default="web/static/data/lineups.json",
+        help="Output probable lineups JSON file"
+    )
     parser.add_argument("--max-workers", type=int, default=10, help="Parallel workers for player pages")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT, help="HTTP timeout in seconds")
     parser.add_argument("--force", action="store_true", help="Ignore cache and scrape again")
@@ -1304,6 +1392,7 @@ def main(argv: list[str] | None = None) -> int:
     quotazioni, stats = run(
         args.year,
         cache_dir=args.cache_dir,
+        lineups_output_json=args.lineups_output_json,
         proxies=proxies,
         verify=not args.no_verify,
         timeout=args.timeout,

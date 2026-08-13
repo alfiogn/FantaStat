@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Probable Formations | Fantastat{% endblock %}
+{% block body %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Auction board</p>
+    <h1>Probable formations</h1>
+    <p class="muted">Interactive pitch infographics parsed from the Fantacalcio probable-formations article. Player names can be opened or added to comparison when matched against Mongo quotations.</p>
+  </div>
+</section>
+
+<section class="panel filters-panel">
+  <div class="field grow">
+    <label for="lineupSearch">Search team/player</label>
+    <input id="lineupSearch" class="input" placeholder="Inter, Scamacca, Calhanoglu...">
+  </div>
+  <div class="field">
+    <label for="lineupTeam">Team</label>
+    <select id="lineupTeam" class="select"><option value="">All</option></select>
+  </div>
+</section>
+
+<section id="lineupsGrid" class="lineups-grid"></section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/lineups.js') }}" defer></script>
+{% endblock %}

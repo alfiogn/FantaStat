@@ -1,11 +1,1 @@
-'use strict';
-
-async function loadMatchday() {
-  const md = window.FANTASTAT_MATCHDAY;
-  const data = await Fantastat.getJSON(Fantastat.withSeason(`/api/matchday/${md}`));
-  document.querySelector('#matchdayTable tbody').innerHTML = (data.matches || []).map(m => `<tr>
-    <td>${m.home_team || m.team_home}</td><td>${m.away_team || m.team_away}</td><td>${score(m)}</td><td>${m.match_date || '-'}</td><td>${m.stadium || '-'}</td><td>${m.calendar_match_status || '-'}</td>
-  </tr>`).join('');
-}
-function score(m){return m.score_home == null ? '-' : `${m.score_home}-${m.score_away}`;}
-document.addEventListener('DOMContentLoaded', async () => { await Fantastat.initSeasonSelector(loadMatchday); await loadMatchday(); });
+'use strict';async function loadMatchday(){const d=await Fantastat.getJSON(Fantastat.withSeason(`/api/matchday/${window.FANTASTAT_MATCHDAY}`));document.querySelector('#matchdayTable tbody').innerHTML=(d.matches||[]).map(m=>`<tr><td>${m.home_team||m.team_home}</td><td>${m.away_team||m.team_away}</td><td>${score(m)}</td><td>${m.match_date||'-'}</td><td>${m.stadium||'-'}</td><td>${m.calendar_match_status||'-'}</td></tr>`).join('')}function score(m){return m.score_home==null?'-':`${m.score_home}-${m.score_away}`}document.addEventListener('DOMContentLoaded',async()=>{await Fantastat.initSeasonSelector(loadMatchday);await loadMatchday()});

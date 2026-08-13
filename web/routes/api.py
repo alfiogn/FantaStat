@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from time import perf_counter
+
 from flask import Blueprint, jsonify, request
 
 from .context import (
     calendar_repo,
-    comparison_service,
     current_season_service,
-    player_repo,
     quotation_repo,
     team_repo,
-    timeline_service,
-    time_window_service
+    time_window_service,
+    window_snapshot_service,
 )
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -28,61 +30,18 @@ def _season() -> int:
 
 def _days() -> int:
     try:
-        return int(request.args.get("days", request.args.get("last_n_days", 38)))
+        value = int(request.args.get("days", request.args.get("last_n_days", 38)))
     except ValueError:
-        return 38
+        value = 38
+    return max(1, value)
 
-    
+
 def _limit(default: int = 250, maximum: int = 5000) -> int:
     try:
         value = int(request.args.get("limit", default))
     except ValueError:
         value = default
     return max(1, min(value, maximum))
-
-
-def _with_last_n_metrics(row: dict, season: int, last_n: int) -> dict:
-    player_id = row.get("player_id")
-    if player_id is None:
-        return row
-
-    records = player_repo.get_player_records(player_id, season)
-    valid = [r for r in records if isinstance(r.get("matchday") or r.get("giornata"), int)]
-    valid = sorted(valid, key=lambda r: int(r.get("matchday") or r.get("giornata")))
-    if last_n > 0:
-        valid = valid[-last_n:]
-
-    def num(value):
-        if value is None or isinstance(value, bool):
-            return None
-        if isinstance(value, (int, float)):
-            return value
-        try:
-            return float(str(value).replace(",", "."))
-        except ValueError:
-            return None
-
-    def total(field):
-        return sum(v for v in (num(r.get(field)) for r in valid) if v is not None)
-
-    def avg(field):
-        values = [v for v in (num(r.get(field)) for r in valid) if v is not None]
-        return round(sum(values) / len(values), 3) if values else None
-
-    enriched = dict(row)
-    enriched["last_n_matchdays"] = last_n
-    enriched["last_n_records"] = len(valid)
-    enriched["last_n_avg_vote"] = avg("voto")
-    enriched["last_n_avg_fantavote"] = avg("fantavoto")
-    enriched["last_n_goals"] = total("scoredGoals")
-    enriched["last_n_assists"] = total("assists")
-    enriched["last_n_yellow_cards"] = total("yellowCards")
-    enriched["last_n_red_cards"] = total("redCards")
-    enriched["last_n_last_matchday"] = max(
-        [int(r.get("matchday") or r.get("giornata")) for r in valid],
-        default=None,
-    )
-    return enriched
 
 
 @api_bp.get("/seasons")
@@ -97,13 +56,28 @@ def time_window():
     return jsonify(time_window_service.context(season, days))
 
 
+@api_bp.get("/cache/window")
+def cache_window_info():
+    return jsonify(window_snapshot_service.info())
+
+
+@api_bp.post("/cache/clear")
+def cache_clear():
+    window_snapshot_service.clear()
+    return jsonify({"status": "cleared"})
+
+
 @api_bp.get("/quotations")
 def quotations():
+
+    t0 = perf_counter()
+
     season = _season()
     days = _days()
-    last_n = int(request.args.get("last_n_matchdays", 38))
-    rows = quotation_repo.list_quotations(
+
+    result = window_snapshot_service.list_rows(
         season,
+        days,
         role=request.args.get("role") or None,
         team=request.args.get("team") or None,
         search=request.args.get("search") or None,
@@ -111,8 +85,14 @@ def quotations():
         direction=-1 if request.args.get("direction", "desc") == "desc" else 1,
         limit=_limit(),
     )
-    rows = [time_window_service.enrich_quotation_row(row, season, days) for row in rows]
-    return jsonify({"season": season, "days": days, "window": time_window_service.context(season, days), "rows": rows})
+
+    print(
+        f"QUOTATIONS {season=} {days=} "
+        f"{len(result['rows'])=} "
+        f"elapsed={perf_counter()-t0:.3f}s"
+    )
+
+    return jsonify(result)
 
 
 @api_bp.get("/filters")
@@ -131,7 +111,7 @@ def filters():
 def player(player_id: str):
     season = _season()
     days = _days()
-    payload = time_window_service.player_payload(player_id, season, days)
+    payload = window_snapshot_service.player_payload(player_id, season, days)
     if not payload.get("player"):
         return jsonify({"error": "player not found"}), 404
     return jsonify(payload)
@@ -141,15 +121,15 @@ def player(player_id: str):
 def player_timeline(player_id: str):
     season = _season()
     days = _days()
-    records = time_window_service.window_records(player_id, season, days)
-    return jsonify({"season": season, "timeline": timeline_service.build(records)})
+    return jsonify(window_snapshot_service.timeline_payload(player_id, season, days))
 
 
 @api_bp.get("/compare")
 def compare():
     season = _season()
+    days = _days()
     ids = request.args.getlist("id") or request.args.getlist("player_id")
-    return jsonify(comparison_service.compare(season, ids))
+    return jsonify(window_snapshot_service.compare_payload(season, days, ids))
 
 
 @api_bp.get("/teams")
@@ -167,7 +147,13 @@ def team_fixtures(team_code: str):
 @api_bp.get("/matchday/<int:matchday>")
 def matchday(matchday: int):
     season = _season()
-    return jsonify({"season": season, "matchday": matchday, "matches": calendar_repo.get_matchday(season, matchday)})
+    return jsonify(
+        {
+            "season": season,
+            "matchday": matchday,
+            "matches": calendar_repo.get_matchday(season, matchday),
+        }
+    )
 
 
 @api_bp.get("/player/<player_id>/season-status")
@@ -188,3 +174,12 @@ def season_status():
     season = _season()
     sample = request.args.get("sample_player_id")
     return jsonify(current_season_service.status(season, sample))
+
+
+@api_bp.get("/lineups")
+def lineups():
+    season = int(request.args.get("season", 2027))
+    path = Path(__file__).resolve().parents[1] / "static" / "data" / f"lineups_{season}.json"
+    if not path.exists():
+        path = Path(__file__).resolve().parents[1] / "static" / "data" / "lineups_2027.json"
+    return jsonify(json.loads(path.read_text(encoding="utf-8")))

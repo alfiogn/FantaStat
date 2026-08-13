@@ -8,9 +8,6 @@ import os
 class Settings:
     mongo_uri: str = os.getenv("FANTASTAT_MONGO_URI", "mongodb://localhost:27017")
     mongo_database: str = os.getenv("FANTASTAT_MONGO_DATABASE", "fantastat")
-    default_season: int | None = None
-    api_limit_default: int = 250
-    api_limit_max: int = 5000
 
 
 settings = Settings()

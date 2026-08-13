@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Team | Fantastat{% endblock %}
+{% block body %}
+<section class="hero">
+  <div><p class="eyebrow">Team</p><h1 id="teamTitle">{{ team_code }}</h1><p class="muted">Fixtures and squad snapshot.</p></div>
+</section>
+<section class="grid two-cols">
+  <article class="panel table-panel"><div class="panel-header"><h2>Squad</h2></div><div class="table-wrap"><table class="data-table" id="teamSquadTable"><thead><tr><th>Player</th><th>Role</th><th class="num">QA</th><th class="num">FVM</th><th>Open</th></tr></thead><tbody></tbody></table></div></article>
+  <article class="panel table-panel"><div class="panel-header"><h2>Fixtures</h2></div><div class="table-wrap"><table class="data-table" id="teamFixturesTable"><thead><tr><th>MD</th><th>Home</th><th>Away</th><th>Score</th><th>Status</th></tr></thead><tbody></tbody></table></div></article>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>window.FANTASTAT_TEAM_CODE = {{ team_code|tojson }};</script>
+<script src="{{ url_for('static', filename='js/team.js') }}" defer></script>
+{% endblock %}

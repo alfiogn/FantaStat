@@ -16,6 +16,7 @@ dependencies = [
   "pydantic>=2.7,<3",
   "requests",
   "beautifulsoup4",
+  "flask>=3.0,<4",
   "pymongo>=4.8,<5",
   "pyyaml>=6,<7"
 ]

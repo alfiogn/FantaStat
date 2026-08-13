@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Fantastat Dashboard{% endblock %}
+{% block body %}
+<section class="hero dashboard-hero">
+  <div>
+    <p class="eyebrow">Market dashboard</p>
+    <h1>Quotazioni, value and form in one place</h1>
+    <p class="muted">Browse the latest season snapshot, filter by team or role, open player pages and build comparisons.</p>
+  </div>
+  <div class="hero-actions">
+    <button class="btn secondary" id="clearCompareBtn">Clear compare</button>
+    <button class="btn primary" id="openCompareBtn">Open compare</button>
+  </div>
+</section>
+
+<section id="seasonStatusPanel" class="panel status-panel hidden">
+  <div class="panel-header">
+    <h2>Season status</h2>
+    <span id="seasonStatusBadge" class="badge">Partial</span>
+  </div>
+  <p id="seasonStatusText" class="muted"></p>
+</section>
+
+<section class="stats-grid" id="dashboardStats">
+  <article class="stat-card"><span>Players</span><strong id="statPlayers">-</strong></article>
+  <article class="stat-card"><span>Teams</span><strong id="statTeams">-</strong></article>
+  <article class="stat-card"><span>Roles</span><strong id="statRoles">-</strong></article>
+  <article class="stat-card"><span>Top FVM</span><strong id="statTopFvm">-</strong></article>
+</section>
+
+<section class="panel filters-panel">
+  <div class="field grow">
+    <label for="searchInput">Search</label>
+    <input id="searchInput" class="input" placeholder="Search player...">
+  </div>
+  <div class="field">
+    <label for="teamFilter">Team</label>
+    <select id="teamFilter" class="select"><option value="">All</option></select>
+  </div>
+  <div class="field">
+    <label for="roleFilter">Role</label>
+    <select id="roleFilter" class="select"><option value="">All</option></select>
+  </div>
+  <div class="field">
+    <label for="sortSelect">Sort</label>
+    <select id="sortSelect" class="select">
+      <option value="FVM">FVM</option>
+      <option value="QA">Quotation</option>
+      <option value="quotation_delta">Delta</option>
+      <option value="name">Name</option>
+    </select>
+  </div>
+</section>
+
+<section class="grid two-cols">
+  <article class="panel">
+    <div class="panel-header"><h2>Top FVM</h2></div>
+    <canvas id="topFvmChart" height="220"></canvas>
+  </article>
+  <article class="panel">
+    <div class="panel-header"><h2>Role distribution</h2></div>
+    <canvas id="roleChart" height="220"></canvas>
+  </article>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-header">
+    <h2>Quotations</h2>
+    <span class="muted" id="tableInfo">Loading...</span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table" id="quotationsTable">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Team</th>
+          <th>Role</th>
+          <th class="num">QI</th>
+          <th class="num">QA</th>
+          <th class="num">Delta</th>
+          <th class="num">FVM</th>
+          <th class="num">W QI</th>
+          <th class="num">W FV</th>
+          <th class="num">W FVM</th>
+          <th class="num">W G</th>
+          <th class="num">W A</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+{% endblock %}

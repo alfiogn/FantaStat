@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Player | Fantastat{% endblock %}
+{% block body %}
+<section class="hero player-hero">
+  <div>
+    <p class="eyebrow">Player analytics</p>
+    <h1 id="playerName">Loading...</h1>
+    <p class="muted" id="playerMeta"></p>
+    <div class="inline-filter">
+      <label for="playerLastNInput">Last N matchdays</label>
+      <input id="playerLastNInput" class="input" type="number" min="1" max="38" value="38">
+    </div>
+  </div>
+  <div class="hero-actions">
+    <button class="btn secondary" id="addCompareBtn">Add to compare</button>
+    <a class="btn primary" id="compareLink" href="/compare">Compare</a>
+  </div>
+</section>
+
+<section id="playerSeasonStatusPanel" class="panel status-panel hidden">
+  <div class="panel-header">
+    <h2>Current season status</h2>
+    <span id="playerSeasonStatusBadge" class="badge">Partial</span>
+  </div>
+  <p id="playerSeasonStatusText" class="muted"></p>
+</section>
+
+<section class="stats-grid" id="playerStats">
+  <article class="stat-card"><span>QA</span><strong id="pCurrentPrice">-</strong></article>
+  <article class="stat-card"><span>FVM</span><strong id="pFvm">-</strong></article>
+  <article class="stat-card"><span>Fantamedia</span><strong id="pAvgFv">-</strong></article>
+  <article class="stat-card"><span>Goals</span><strong id="pGoals">-</strong></article>
+  <article class="stat-card"><span>Assists</span><strong id="pAssists">-</strong></article>
+</section>
+
+<section class="grid two-cols">
+  <article class="panel"><div class="panel-header"><h2>Ratings</h2></div><canvas id="ratingsChart" height="260"></canvas></article>
+  <article class="panel"><div class="panel-header"><h2>Quotation</h2></div><canvas id="priceChart" height="260"></canvas></article>
+</section>
+
+<section class="grid two-cols">
+  <article class="panel"><div class="panel-header"><h2>Cumulative contributions</h2></div><canvas id="contribChart" height="260"></canvas></article>
+  <article class="panel"><div class="panel-header"><h2>Availability</h2></div><div id="availability" class="status-list"></div></article>
+</section>
+
+
+<section class="panel table-panel">
+  <div class="panel-header"><h2>Next fixtures</h2><span class="muted">calendar driven</span></div>
+  <div class="table-wrap">
+    <table class="data-table" id="nextFixturesTable">
+      <thead><tr><th>MD</th><th>Home</th><th>Away</th><th>Date</th><th>Status</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel table-panel">
+  <div class="panel-header"><h2>Last matchdays</h2><span id="playerTableInfo" class="muted"></span></div>
+  <div class="table-wrap">
+    <table class="data-table" id="recordsTable">
+      <thead><tr><th>MD</th><th>Match</th><th>Status</th><th class="num">Voto</th><th class="num">FV</th><th class="num">G</th><th class="num">A</th><th class="num">Q</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>window.FANTASTAT_PLAYER_ID = {{ player_id|tojson }};</script>
+<script src="{{ url_for('static', filename='js/player.js') }}" defer></script>
+{% endblock %}

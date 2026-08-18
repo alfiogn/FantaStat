@@ -126,6 +126,10 @@ class Builder:
                     {
                         "_id": player_id.lower().replace(" ", "_"),
                         "name": player_id,
+                        "player_id": self._player_id_from_url(
+                            player_stats.get("attrs", {}).get("canonical_url")
+                        ) or player_stats.get("attrs", {}).get("bridge", {}).get("playerId")
+                          or "",
                         "seasons": {}
                     }
                 )
@@ -331,7 +335,6 @@ class Builder:
 
         match = re.search(r"/(\d+)/\d{4}-\d{2}/?$", value.strip())
         return int(match.group(1)) if match else None
-
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

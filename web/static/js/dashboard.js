@@ -104,7 +104,7 @@ function applyLocalFilters(data) {
     });
 }
 
-function comparePlayers(playerId) {
+function addCompare(playerId) {
     Fantastat.addCompare(playerId);
     Fantastat.toast('Added to compare');
 };

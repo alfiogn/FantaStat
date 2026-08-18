@@ -175,9 +175,9 @@ class WindowSnapshotService:
             players.append(
                 {
                     "player_id": player.get("player_id") or player_id,
-                    "name": player.get("name"),
-                    "team": player.get("team_code") or player.get("team"),
-                    "role": player.get("role"),
+                    "name": row.get("nome") or player.get("name"),
+                    "team": row.get("square") or row.get("team"),
+                    "role": row.get("ruolo") or row.get("role"),
                     "summary": self._summary_from_row(row),
                     "timeline": snapshot.timelines.get(key, self.timeline_service.build([])),
                 }
@@ -224,7 +224,7 @@ class WindowSnapshotService:
                 continue
 
             key = self._player_key(player_id)
-            records = self.time_window_service.window_records(player_id, season, days)
+            records = self.time_window_service.window_records(row["nome"], season, days)
             metrics = self.time_window_service.metrics_from_records(records, row, days)
             enriched = dict(row)
             enriched["window"] = window

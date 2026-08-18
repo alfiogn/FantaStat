@@ -16,6 +16,7 @@ function selectedRoles() {
 }
 
 function filteredPlayers() {
+    console.log('filteredPlayers: comparePayload=', comparePayload);
     const roles = selectedRoles();
 
     return (comparePayload?.players || [])

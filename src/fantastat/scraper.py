@@ -1289,6 +1289,27 @@ class FantacalcioRunner:
         print(f"Saved stats for {len(stats)} players to {path} in {time_s() - start:.02f}s")
         return stats
 
+    def load_or_scrape_lineups(self, force: bool = False) -> dict[str, Any]:
+        path = self.config.lineups_cache_file
+
+        if not force and self.cache.is_fresh(path):
+            print(f"Reading cached lineups: {path}")
+            return self.cache.read_json(path)
+
+        print(f"Scraping probable lineups: {PROBABLE_LINEUPS}")
+        html = self.client.get_text(PROBABLE_LINEUPS)
+
+        payload = LineupsScraper().parse_html(
+            html,
+            season=self.config.reference_year,
+            source=PROBABLE_LINEUPS,
+        )
+
+        self.cache.write_json(payload, path)
+        print(f"Saved lineups for {len(payload.get('teams', []))} teams to {path}")
+
+        return payload
+
     def build_calendar_baseline(self, quotazioni: pd.DataFrame, calendar: pd.DataFrame) -> dict[str, pd.DataFrame]:
         required = {"nome", "squadra"}
         missing = required - set(quotazioni.columns)
@@ -1340,6 +1361,7 @@ class FantacalcioRunner:
     def run(self, force: bool = False) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
         quotazioni = self.load_or_scrape_quotazioni(force=force)
         stats = self.load_or_scrape_stats(quotazioni, force=force)
+        self.load_or_scrape_lineups(force=force)
         return quotazioni, stats
 
 

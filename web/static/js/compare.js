@@ -154,6 +154,7 @@ function renderCompare() {
     renderMetrics(comparePayload?.metrics || [], players);
     renderCharts(players);
     renderCompareDistribution(players);
+    renderCompareBoxplots(players);
 }
 
 function renderCards(players) {
@@ -259,6 +260,46 @@ function renderCharts(players) {
     );
 }
 
+function renderCompareBoxplots(players) {
+    const metricSelect =
+        document.getElementById('compareBoxplotMetric');
+
+    const grid =
+        document.getElementById('compareBoxplotGrid');
+
+    if (!metricSelect || !grid) {
+        return;
+    }
+
+    const metric = metricSelect.value;
+
+    const scale = {
+        goals: { min: -1 },
+        assists: { min: 0 },
+        voto: { min: 0, max: 10 },
+        fantavoto: { min: -3, max: 15 },
+    }[metric] || {};
+
+    grid.innerHTML = players.map(player => `
+        <article
+            class="boxplot-card"
+            id="compareBox_${player.player_id}_${metric}"
+        ></article>
+    `).join('');
+
+    for (const player of players) {
+        const box =
+            player.summary.window_boxplots?.[metric];
+
+        Fantastat.renderBoxplot(
+            `compareBox_${player.player_id}_${metric}`,
+            player.name,
+            box,
+            scale
+        );
+    }
+}
+
 function removeComparedPlayer(playerId) {
     Fantastat.removeCompare(playerId);
 
@@ -291,6 +332,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document
         .getElementById('compareDistributionMetric')
+        ?.addEventListener('change', renderCompare);
+    
+    document
+        .getElementById('compareBoxplotMetric')
         ?.addEventListener('change', renderCompare);
 
     await loadCompare();

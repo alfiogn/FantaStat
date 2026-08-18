@@ -199,6 +199,67 @@ window.Fantastat = (() => {
             }
         })
     }
+
+    function renderBoxplot(containerId, title, box, options = {}) {
+        const container = document.getElementById(containerId);
+
+        if (!container) {
+            return;
+        }
+
+        if (!box || !box.n) {
+            container.innerHTML =
+                `<div class="boxplot-empty">${title}: no data</div>`;
+            return;
+        }
+
+        const minScale =
+            options.min !== undefined ? options.min : box.min;
+
+        const maxScale =
+            options.max !== undefined ? options.max : box.max;
+
+        const span =
+            Math.max(maxScale - minScale, 1e-9);
+
+        const x = value =>
+            8 + 84 * ((value - minScale) / span);
+
+        const min = x(box.min);
+        const q1 = x(box.q1);
+        const med = x(box.median);
+        const q3 = x(box.q3);
+        const max = x(box.max);
+        const mean = x(box.mean);
+
+        container.innerHTML = `
+            <div class="boxplot-header">
+                <strong>${title}</strong>
+                <span>n=${box.n}</span>
+            </div>
+
+            <svg class="boxplot-svg" viewBox="0 0 100 42" preserveAspectRatio="none">
+                <line class="boxplot-whisker" x1="${min}" y1="21" x2="${max}" y2="21"></line>
+
+                <line class="boxplot-cap" x1="${min}" y1="13" x2="${min}" y2="29"></line>
+                <line class="boxplot-cap" x1="${max}" y1="13" x2="${max}" y2="29"></line>
+
+                <rect class="boxplot-box" x="${q1}" y="10" width="${Math.max(q3 - q1, 0.5)}" height="22"></rect>
+
+                <line class="boxplot-median" x1="${med}" y1="8" x2="${med}" y2="34"></line>
+                <circle class="boxplot-mean" cx="${mean}" cy="21" r="1.8"></circle>
+            </svg>
+
+            <div class="boxplot-values">
+                <span>min ${Fantastat.fmt(box.min)}</span>
+                <span>q1 ${Fantastat.fmt(box.q1)}</span>
+                <span>med ${Fantastat.fmt(box.median)}</span>
+                <span>q3 ${Fantastat.fmt(box.q3)}</span>
+                <span>max ${Fantastat.fmt(box.max)}</span>
+            </div>
+        `;
+    }
+
     return {
         getJSON,
         withSeason,
@@ -214,7 +275,8 @@ window.Fantastat = (() => {
         compareUrl,
         updateCompareNav,
         toast,
-        chartLine
+        chartLine,
+        renderBoxplot
     }
 })();
 

@@ -111,9 +111,7 @@ def filters():
 def player(player_id: str):
     season = _season()
     days = _days()
-    payload = window_snapshot_service.player_payload(player_id, season, days)
-    if not payload.get("player"):
-        return jsonify({"error": "player not found"}), 404
+    payload = time_window_service.player_payload(player_id, season, days)
     return jsonify(payload)
 
 

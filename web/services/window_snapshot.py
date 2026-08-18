@@ -47,7 +47,7 @@ class WindowSnapshotService:
         player_repo: PlayerRepository,
         time_window_service: TimeWindowService,
         timeline_service: TimelineService,
-        ttl_seconds: int = 900,
+        ttl_seconds: int = 3600,
         max_entries: int = 32,
     ):
         self.quotation_repo = quotation_repo
@@ -66,8 +66,10 @@ class WindowSnapshotService:
         with self._lock:
             cached = self._cache.get(key)
             if cached and now - cached.created_at <= self.ttl_seconds:
+                print('CACHE HIT', key, f'age={now - cached.created_at:.3f}s')
                 return cached
 
+        print('CACHE MISS', key)
         snapshot = self._build_snapshot(int(season), int(days))
 
         with self._lock:

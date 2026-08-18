@@ -127,16 +127,40 @@ class TimeWindowService:
         out.update(self.metrics_from_records(records, row, days))
         return out
 
+    def _player_from_quotation(
+        self,
+        quotation: dict[str, Any],
+        requested_id: int | str,
+    ) -> dict[str, Any]:
+        return {
+            "player_id": quotation.get("player_id") or str(requested_id),
+            "fantacalcio_id": quotation.get("fantacalcio_id"),
+            "name": quotation.get("name") or quotation.get("nome") or str(requested_id),
+            "team": quotation.get("team") or quotation.get("squadra"),
+            "team_code": quotation.get("team") or quotation.get("squadra"),
+            "role": quotation.get("role") or quotation.get("ruolo"),
+            "source": "quotation",
+        }
+
     def player_payload(self, player_id: int | str, season: int, days: int = 38) -> dict[str, Any]:
         player = self.player_repo.get_player(player_id)
-        season_doc = self.player_repo.get_player_season(player_id, season)
-        records = self.window_records(player_id, season, days)
-        quotation = None
+
+        quotation = self.quotation_repo.get_player_quotation(
+            season,
+            player.get("player_id") if player else player_id,
+        )
+
+        if not player and quotation:
+            player = self._player_from_quotation(quotation, player_id)
+
+        season_doc = None
+        records: list[dict[str, Any]] = []
+
         if player:
-            quotation = self.quotation_repo.get_player_quotation(
-                season,
-                player.get("player_id") or player_id,
-            )
+            resolved_id = player.get("player_id") or player_id
+            season_doc = self.player_repo.get_player_season(resolved_id, season)
+            records = self.window_records(resolved_id, season, days)
+
         return {
             "player": player,
             "season": int(season),
@@ -214,6 +238,7 @@ class TimeWindowService:
             "window_end_season": last_record.get("window_season") if last_record else None,
             "window_end_matchday": last_record.get("window_matchday") if last_record else None,
             "window_distributions": self.distributions_from_records(records),
+            "window_boxplots": self.boxplots_from_records(records),
         }
 
     def distributions_from_records(self, records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -265,6 +290,66 @@ class TimeWindowService:
             ),
         }
 
+    def boxplots_from_records(self, records: list[dict[str, Any]]) -> dict[str, Any]:
+        return {
+            "goals": self._boxplot(
+                [self._goal_bucket(record) for record in records],
+            ),
+            "assists": self._boxplot(
+                [self._integer(record.get("assists")) or 0 for record in records],
+            ),
+            "voto": self._boxplot(
+                [self._number(record.get("voto")) for record in records],
+            ),
+            "fantavoto": self._boxplot(
+                [self._number(record.get("fantavoto")) for record in records],
+            ),
+        }
+
+
+    def _boxplot(self, values: list[int | float | None]) -> dict[str, Any]:
+        clean = sorted(
+            float(value)
+            for value in values
+            if value is not None
+        )
+
+        if not clean:
+            return {
+                "n": 0,
+                "min": None,
+                "q1": None,
+                "median": None,
+                "q3": None,
+                "max": None,
+                "mean": None,
+            }
+
+        return {
+            "n": len(clean),
+            "min": clean[0],
+            "q1": self._quantile(clean, 0.25),
+            "median": self._quantile(clean, 0.50),
+            "q3": self._quantile(clean, 0.75),
+            "max": clean[-1],
+            "mean": sum(clean) / len(clean),
+        }
+
+
+    @staticmethod
+    def _quantile(values: list[float], q: float) -> float:
+        if not values:
+            return 0.0
+
+        if len(values) == 1:
+            return values[0]
+
+        position = (len(values) - 1) * q
+        lower = int(position)
+        upper = min(lower + 1, len(values) - 1)
+        weight = position - lower
+
+        return values[lower] * (1.0 - weight) + values[upper] * weight
 
     def _goal_bucket(self, record: dict[str, Any]) -> int:
         scored = self._integer(record.get("scoredGoals")) or 0

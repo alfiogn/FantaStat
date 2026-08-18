@@ -1,0 +1,906 @@
+{
+  "season": 2027,
+  "source": "https://www.fantacalcio.it/news/calcio-italia/06_08_2026/asta-fantacalcio-le-probabili-formazioni-della-serie-a-enilive-2026-27-495558",
+  "teams": [
+    {
+      "team": "ATALANTA",
+      "coach": "Maurizio Sarri (nuovo)",
+      "module": "4-3-3",
+      "module_text": "4-3-3 (alternativa 4-2-3-1)",
+      "lineup_text": "Carnesecchi; Zappacosta, Kristensen, Scalvini, Bernasconi; Samardzic, Gaetano, Ederson; De Ketelaere, Scamacca, Raspadori.",
+      "groups": [
+        [
+          "Carnesecchi"
+        ],
+        [
+          "Zappacosta",
+          "Kristensen",
+          "Scalvini",
+          "Bernasconi"
+        ],
+        [
+          "Samardzic",
+          "Gaetano",
+          "Ederson"
+        ],
+        [
+          "De Ketelaere",
+          "Scamacca",
+          "Raspadori"
+        ]
+      ],
+      "players": [
+        "Carnesecchi",
+        "Zappacosta",
+        "Kristensen",
+        "Scalvini",
+        "Bernasconi",
+        "Samardzic",
+        "Gaetano",
+        "Ederson",
+        "De Ketelaere",
+        "Scamacca",
+        "Raspadori"
+      ],
+      "ballottaggi": "Zappacosta/Bellanova; Kristensen/Hien; Bernasconi/Ahanor; Samardzic/Pasalic; Scamacca/ Krstovic",
+      "rigoristi": "Scamacca, Krstovic, Samardzic",
+      "calci_da_fermo": "De Ketelaere, Samardzic, Gaetano"
+    },
+    {
+      "team": "BOLOGNA",
+      "coach": "Domenico Tedesco (nuovo)",
+      "module": "4-2-3-1",
+      "module_text": "4-2-3-1 (in alternativa 4-3-3)",
+      "lineup_text": "Skorupski; Zortea, Vitik, Heggem, Miranda; Moro, Ferguson; Orsolini, Bernardeschi, Rowe; Dovbyk.",
+      "groups": [
+        [
+          "Skorupski"
+        ],
+        [
+          "Zortea",
+          "Vitik",
+          "Heggem",
+          "Miranda"
+        ],
+        [
+          "Moro",
+          "Ferguson"
+        ],
+        [
+          "Orsolini",
+          "Bernardeschi",
+          "Rowe"
+        ],
+        [
+          "Dovbyk"
+        ]
+      ],
+      "players": [
+        "Skorupski",
+        "Zortea",
+        "Vitik",
+        "Heggem",
+        "Miranda",
+        "Moro",
+        "Ferguson",
+        "Orsolini",
+        "Bernardeschi",
+        "Rowe",
+        "Dovbyk"
+      ],
+      "ballottaggi": "Vitik/Casale; Bernardeschi/Amondarain (con quest'ultimo in mediana passaggio al 4-3-3); Rowe/Cambiaghi; Bernardeschi/Odgaard; Dovbyk/Piccoli",
+      "rigoristi": "Orsolini, Bernardeschi, Dovbyk",
+      "calci_da_fermo": "Orsolini, Bernardeschi, Miranda"
+    },
+    {
+      "team": "CAGLIARI",
+      "coach": "Fabio Pisacane (confermato)",
+      "module": "4-4-2",
+      "module_text": "4-4-2 (alternativa 4-3-1-2 o 3-5-2)",
+      "lineup_text": "Caprile; Ze Pedro, Mina, Rodriguez, Obert; Adopo, Winks, Romano, Fazzini; Kevin Carlos, Maldini.",
+      "groups": [
+        [
+          "Caprile"
+        ],
+        [
+          "Ze Pedro",
+          "Mina",
+          "Rodriguez",
+          "Obert"
+        ],
+        [
+          "Adopo",
+          "Winks",
+          "Romano",
+          "Fazzini"
+        ],
+        [
+          "Kevin Carlos",
+          "Maldini"
+        ]
+      ],
+      "players": [
+        "Caprile",
+        "Ze Pedro",
+        "Mina",
+        "Rodriguez",
+        "Obert",
+        "Adopo",
+        "Winks",
+        "Romano",
+        "Fazzini",
+        "Kevin Carlos",
+        "Maldini"
+      ],
+      "ballottaggi": "Ze Pedro/Zappa; Rodriguez/Kofler; Romano/Prati Romano/Felici (con quest'ultimo passaggio al 4-3-3); Maldini/Mendy",
+      "rigoristi": "Kevin Carlos, Maldini, Mina",
+      "calci_da_fermo": "Fazzini, Maldini, Winks"
+    },
+    {
+      "team": "COMO",
+      "coach": "Cesc Fabregas (confermato)",
+      "module": "4-2-3-1",
+      "module_text": "4-2-3-1 (alternativa 4-3-3)",
+      "lineup_text": "Butez; Couto, Chalobah, Ramon, Kaiki; Da Cunha, Perrone; Diao, Paz, Baturina; Douvikas.",
+      "groups": [
+        [
+          "Butez"
+        ],
+        [
+          "Couto",
+          "Chalobah",
+          "Ramon",
+          "Kaiki"
+        ],
+        [
+          "Da Cunha",
+          "Perrone"
+        ],
+        [
+          "Diao",
+          "Paz",
+          "Baturina"
+        ],
+        [
+          "Douvikas"
+        ]
+      ],
+      "players": [
+        "Butez",
+        "Couto",
+        "Chalobah",
+        "Ramon",
+        "Kaiki",
+        "Da Cunha",
+        "Perrone",
+        "Diao",
+        "Paz",
+        "Baturina",
+        "Douvikas"
+      ],
+      "ballottaggi": "Couto/Smolcic; Chalobah/Kempf; Kaiki/Valle; Diao/Rodriguez; Baturina/Caqueret (con quest'ultimo in mediana passaggio al 4-3-3)",
+      "rigoristi": "Da Cunha, Douvikas, Paz",
+      "calci_da_fermo": "Paz, Baturina, Da Cunha"
+    },
+    {
+      "team": "FIORENTINA",
+      "coach": "Fabio Grosso (nuovo)",
+      "module": "4-3-3",
+      "module_text": "4-3-3 (alternativa 4-2-3-1)",
+      "lineup_text": "De Gea; Jimenez, Dragusin, Viery, Valdepenas; Ndour, Oulai, Atta; Mastantuono, Kean, Gudmundsson.",
+      "groups": [
+        [
+          "De Gea"
+        ],
+        [
+          "Jimenez",
+          "Dragusin",
+          "Viery",
+          "Valdepenas"
+        ],
+        [
+          "Ndour",
+          "Oulai",
+          "Atta"
+        ],
+        [
+          "Mastantuono",
+          "Kean",
+          "Gudmundsson"
+        ]
+      ],
+      "players": [
+        "De Gea",
+        "Jimenez",
+        "Dragusin",
+        "Viery",
+        "Valdepenas",
+        "Ndour",
+        "Oulai",
+        "Atta",
+        "Mastantuono",
+        "Kean",
+        "Gudmundsson"
+      ],
+      "ballottaggi": "Jimenez/Dodò; Valdepenas/Joao Mario; Viery/Ranieri; Oulai/Fagioli; Ndour/Mandragora",
+      "rigoristi": "Gudmundsson, Kean, Mandragora",
+      "calci_da_fermo": "Gudmundsson, Mastantuono, Atta"
+    },
+    {
+      "team": "FROSINONE",
+      "coach": "Massimiliano Alvini (confermato)",
+      "module": "4-3-3",
+      "module_text": "4-3-3",
+      "lineup_text": "Palmisani; A. Oyono, Monterisi, Calvani, Bracaglia; Grillitsch, Calò, Masini; Ghedjemis, Raimondo, Schimd.",
+      "groups": [
+        [
+          "Palmisani"
+        ],
+        [
+          "A. Oyono",
+          "Monterisi",
+          "Calvani",
+          "Bracaglia"
+        ],
+        [
+          "Grillitsch",
+          "Calò",
+          "Masini"
+        ],
+        [
+          "Ghedjemis",
+          "Raimondo",
+          "Schimd"
+        ]
+      ],
+      "players": [
+        "Palmisani",
+        "A. Oyono",
+        "Monterisi",
+        "Calvani",
+        "Bracaglia",
+        "Grillitsch",
+        "Calò",
+        "Masini",
+        "Ghedjemis",
+        "Raimondo",
+        "Schimd"
+      ],
+      "ballottaggi": "Calvani/Akpoguma, Bracaglia/Terzic; Masini/Cichella; Masini/Zerbin (con quest'ultimo nel tridente slitterebbe Schimd da mezz'ala)",
+      "rigoristi": "Calò, Schimd, Grillitsch",
+      "calci_da_fermo": "Calò, Schimd, Ghedjemis"
+    },
+    {
+      "team": "GENOA",
+      "coach": "Daniele De Rossi (confermato)",
+      "module": "3-4-2-1",
+      "module_text": "3-4-2-1",
+      "lineup_text": "Bijlow; Marcandalli, Ostigard, Vasquez; Norton-Cuffy, Frendrup, Sow, Ellertsson; Baldanzi, Vitinha; Colombo.",
+      "groups": [
+        [
+          "Bijlow"
+        ],
+        [
+          "Marcandalli",
+          "Ostigard",
+          "Vasquez"
+        ],
+        [
+          "Norton-Cuffy",
+          "Frendrup",
+          "Sow",
+          "Ellertsson"
+        ],
+        [
+          "Baldanzi",
+          "Vitinha"
+        ],
+        [
+          "Colombo"
+        ]
+      ],
+      "players": [
+        "Bijlow",
+        "Marcandalli",
+        "Ostigard",
+        "Vasquez",
+        "Norton-Cuffy",
+        "Frendrup",
+        "Sow",
+        "Ellertsson",
+        "Baldanzi",
+        "Vitinha",
+        "Colombo"
+      ],
+      "ballottaggi": "Ellertsson/Martin, Sow/Amorim; Baldanzi/Traoré, Vitinha/Meichtry",
+      "rigoristi": "Colombo, Ostigard, Vitinha",
+      "calci_da_fermo": "Baldanzi, Martin, Vitinha"
+    },
+    {
+      "team": "INTER",
+      "coach": "Cristian Chivu (confermato)",
+      "module": "3-5-2",
+      "module_text": "3-5-2",
+      "lineup_text": "Martinez; Akanji, Stones, Bastoni; Spence, Barella, Calhanoglu, Zielinski, Dimarco; Thuram, Lautaro.",
+      "groups": [
+        [
+          "Martinez"
+        ],
+        [
+          "Akanji",
+          "Stones",
+          "Bastoni"
+        ],
+        [
+          "Spence",
+          "Barella",
+          "Calhanoglu",
+          "Zielinski",
+          "Dimarco"
+        ],
+        [
+          "Thuram",
+          "Lautaro"
+        ]
+      ],
+      "players": [
+        "Martinez",
+        "Akanji",
+        "Stones",
+        "Bastoni",
+        "Spence",
+        "Barella",
+        "Calhanoglu",
+        "Zielinski",
+        "Dimarco",
+        "Thuram",
+        "Lautaro"
+      ],
+      "ballottaggi": "Stones/Bisseck, Spence/Diouf, Zielinski/Sucic, Thuram/Pio Esposito",
+      "rigoristi": "Calhanoglu, Zielinski, Lautaro Martinez",
+      "calci_da_fermo": "Calhanoglu, Dimarco, Zielinski"
+    },
+    {
+      "team": "JUVENTUS",
+      "coach": "Luciano Spalletti (confermato)",
+      "module": "4-2-3-1",
+      "module_text": "4-2-3-1",
+      "lineup_text": "Di Gregorio; Kalulu, Bremer, Lucumì, Cambiaso; Locatelli, McKennie; Conceicao, Alajbegovic, Yildiz; Kolo Muani.",
+      "groups": [
+        [
+          "Di Gregorio"
+        ],
+        [
+          "Kalulu",
+          "Bremer",
+          "Lucumì",
+          "Cambiaso"
+        ],
+        [
+          "Locatelli",
+          "McKennie"
+        ],
+        [
+          "Conceicao",
+          "Alajbegovic",
+          "Yildiz"
+        ],
+        [
+          "Kolo Muani"
+        ]
+      ],
+      "players": [
+        "Di Gregorio",
+        "Kalulu",
+        "Bremer",
+        "Lucumì",
+        "Cambiaso",
+        "Locatelli",
+        "McKennie",
+        "Conceicao",
+        "Alajbegovic",
+        "Yildiz",
+        "Kolo Muani"
+      ],
+      "ballottaggi": "Lucumì/Kelly; Kalulu/Celik; McKennie/Thuram; Alajbegovic/Thuram (con il francese in mezzo al campo avanzerebbe McKennie da trequartista)",
+      "rigoristi": "Kolo Muani, Yildiz, Locatelli",
+      "calci_da_fermo": "Yildiz, Locatelli, Cambiaso"
+    },
+    {
+      "team": "LAZIO",
+      "coach": "Gennaro Gattuso (nuovo)",
+      "module": "4-3-3",
+      "module_text": "4-3-3 (alternativa 4-2-3-1)",
+      "lineup_text": "Mandas; Marusic, Doekhi, Romagnoli, Pedraza; Taylor, Rovella, Frattesi; Cancellieri, Dia, Zaccagni.",
+      "groups": [
+        [
+          "Mandas"
+        ],
+        [
+          "Marusic",
+          "Doekhi",
+          "Romagnoli",
+          "Pedraza"
+        ],
+        [
+          "Taylor",
+          "Rovella",
+          "Frattesi"
+        ],
+        [
+          "Cancellieri",
+          "Dia",
+          "Zaccagni"
+        ]
+      ],
+      "players": [
+        "Mandas",
+        "Marusic",
+        "Doekhi",
+        "Romagnoli",
+        "Pedraza",
+        "Taylor",
+        "Rovella",
+        "Frattesi",
+        "Cancellieri",
+        "Dia",
+        "Zaccagni"
+      ],
+      "ballottaggi": "Marusic/Floriani Mussolini, Pedraza/Tavares, Cancellieri/Isaksen; Dia/Ratkov",
+      "rigoristi": "Zaccagni, Taylor, Cataldi",
+      "calci_da_fermo": "Rovella, Zaccagni, Cataldi"
+    },
+    {
+      "team": "LECCE",
+      "coach": "Eusebio Di Francesco (confermato)",
+      "module": "4-2-3-1",
+      "module_text": "4-2-3-1",
+      "lineup_text": "Falcone; Danilo Veiga, Gaspar, Tiago Gabriel, Gallo; Coulibaly, Ngom, Berisha; Pierotti, Geubbels, N’Dri.",
+      "groups": [
+        [
+          "Falcone"
+        ],
+        [
+          "Danilo Veiga",
+          "Gaspar",
+          "Tiago Gabriel",
+          "Gallo"
+        ],
+        [
+          "Coulibaly",
+          "Ngom",
+          "Berisha"
+        ],
+        [
+          "Pierotti",
+          "Geubbels",
+          "N’Dri"
+        ]
+      ],
+      "players": [
+        "Falcone",
+        "Danilo Veiga",
+        "Gaspar",
+        "Tiago Gabriel",
+        "Gallo",
+        "Coulibaly",
+        "Ngom",
+        "Berisha",
+        "Pierotti",
+        "Geubbels",
+        "N’Dri"
+      ],
+      "ballottaggi": "Gaspar/Siebert, Ngom/Gorter, Berisha/Gandelman, Geubbels/Stulic",
+      "rigoristi": "Geubbels, Stulic, Berisha",
+      "calci_da_fermo": "Pierotti, Berisha, Gallo"
+    },
+    {
+      "team": "MILAN",
+      "coach": "Ruben Amorim (nuovo)",
+      "module": "3-4-2-1",
+      "module_text": "3-4-2-1",
+      "lineup_text": "Maignan; Gila, Gabbia, Pavlovic; Saelemakers, Modric, Rabiot, Bartesaghi; Pulisic, Leao; Ramos.",
+      "groups": [
+        [
+          "Maignan"
+        ],
+        [
+          "Gila",
+          "Gabbia",
+          "Pavlovic"
+        ],
+        [
+          "Saelemakers",
+          "Modric",
+          "Rabiot",
+          "Bartesaghi"
+        ],
+        [
+          "Pulisic",
+          "Leao"
+        ],
+        [
+          "Ramos"
+        ]
+      ],
+      "players": [
+        "Maignan",
+        "Gila",
+        "Gabbia",
+        "Pavlovic",
+        "Saelemakers",
+        "Modric",
+        "Rabiot",
+        "Bartesaghi",
+        "Pulisic",
+        "Leao",
+        "Ramos"
+      ],
+      "ballottaggi": "Saelemaekers/Chukwueze",
+      "rigoristi": "Ramos, Pulisic, Modric",
+      "calci_da_fermo": "Modric, Pulisic, Saelemaekers"
+    },
+    {
+      "team": "MONZA",
+      "coach": "Ivan Juric (nuovo)",
+      "module": "3-4-2-1",
+      "module_text": "3-4-2-1",
+      "lineup_text": "Thiam; Kouadio, Delli Carri, Lucchesi; Birindelli, Pessina, Akinsanmiro, Mangas; Colpani, Mota; Cutrone.",
+      "groups": [
+        [
+          "Thiam"
+        ],
+        [
+          "Kouadio",
+          "Delli Carri",
+          "Lucchesi"
+        ],
+        [
+          "Birindelli",
+          "Pessina",
+          "Akinsanmiro",
+          "Mangas"
+        ],
+        [
+          "Colpani",
+          "Mota"
+        ],
+        [
+          "Cutrone"
+        ]
+      ],
+      "players": [
+        "Thiam",
+        "Kouadio",
+        "Delli Carri",
+        "Lucchesi",
+        "Birindelli",
+        "Pessina",
+        "Akinsanmiro",
+        "Mangas",
+        "Colpani",
+        "Mota",
+        "Cutrone"
+      ],
+      "ballottaggi": "Delli Carri/Carboni; Pessina/Colombo L.; Mota/Robinson",
+      "rigoristi": "Pessina, Cutrone, Petagna",
+      "calci_da_fermo": "Pessina, Colpani, Mota"
+    },
+    {
+      "team": "NAPOLI",
+      "coach": "Massimiliano Allegri (nuovo)",
+      "module": "4-3-3",
+      "module_text": "4-3-3",
+      "lineup_text": "Meret; Di Lorenzo, Rrahmani, Beukema, Spinazzola; De Bruyne, Lobotka, McTominay; Politano, Hojlund, Alisson Santos.",
+      "groups": [
+        [
+          "Meret"
+        ],
+        [
+          "Di Lorenzo",
+          "Rrahmani",
+          "Beukema",
+          "Spinazzola"
+        ],
+        [
+          "De Bruyne",
+          "Lobotka",
+          "McTominay"
+        ],
+        [
+          "Politano",
+          "Hojlund",
+          "Alisson Santos"
+        ]
+      ],
+      "players": [
+        "Meret",
+        "Di Lorenzo",
+        "Rrahmani",
+        "Beukema",
+        "Spinazzola",
+        "De Bruyne",
+        "Lobotka",
+        "McTominay",
+        "Politano",
+        "Hojlund",
+        "Alisson Santos"
+      ],
+      "ballottaggi": "Beukema/Buongiorno; Spinazzola/Olivera, De Bruyne/Anguissa; De Bruyne/Vergara; Politano/Neres",
+      "rigoristi": "De Bruyne, Hojlund, Politano",
+      "calci_da_fermo": "De Bruyne, Politano, Neres"
+    },
+    {
+      "team": "PARMA",
+      "coach": "Carlos Cuesta (confermato)",
+      "module": "4-3-3",
+      "module_text": "4-3-3 (alternativa 3-5-2)",
+      "lineup_text": "Corvi; Delprato, Circati, Valenti, Valeri; Keita, Nicolussi Caviglia, Bernabé; Frigan, Romero, Tourè.",
+      "groups": [
+        [
+          "Corvi"
+        ],
+        [
+          "Delprato",
+          "Circati",
+          "Valenti",
+          "Valeri"
+        ],
+        [
+          "Keita",
+          "Nicolussi Caviglia",
+          "Bernabé"
+        ],
+        [
+          "Frigan",
+          "Romero",
+          "Tourè"
+        ]
+      ],
+      "players": [
+        "Corvi",
+        "Delprato",
+        "Circati",
+        "Valenti",
+        "Valeri",
+        "Keita",
+        "Nicolussi Caviglia",
+        "Bernabé",
+        "Frigan",
+        "Romero",
+        "Tourè"
+      ],
+      "ballottaggi": "Nicolussi Caviglia/Sorensen; Frigan/Troilo (con quest'ultimo in difesa passaggio al 3-5-2); Valenti/Troilo; Frigan/Diallo; Romero/Elphege",
+      "rigoristi": "Tourè, Romero, Valeri",
+      "calci_da_fermo": "Bernabè, Nicolussi Caviglia, Valeri"
+    },
+    {
+      "team": "ROMA",
+      "coach": "Gian Piero Gasperini (confermato)",
+      "module": "3-4-2-1",
+      "module_text": "3-4-2-1",
+      "lineup_text": "Svilar; Mancini, N’Dicka, Hermoso; Molina, Koné, Cristante, Wesley; Soulé, Dybala; Malen.",
+      "groups": [
+        [
+          "Svilar"
+        ],
+        [
+          "Mancini",
+          "N’Dicka",
+          "Hermoso"
+        ],
+        [
+          "Molina",
+          "Koné",
+          "Cristante",
+          "Wesley"
+        ],
+        [
+          "Soulé",
+          "Dybala"
+        ],
+        [
+          "Malen"
+        ]
+      ],
+      "players": [
+        "Svilar",
+        "Mancini",
+        "N’Dicka",
+        "Hermoso",
+        "Molina",
+        "Koné",
+        "Cristante",
+        "Wesley",
+        "Soulé",
+        "Dybala",
+        "Malen"
+      ],
+      "ballottaggi": "Hermoso/Koulierakis; Soulé/Castro (con quest'ultimo da prima punta retrocederebbe Malen alle spalle dell'argentino)",
+      "rigoristi": "Malen, Dybala, Castro",
+      "calci_da_fermo": "Dybala, Malen, Soulè"
+    },
+    {
+      "team": "SASSUOLO",
+      "coach": "Alberto Aquilani (nuovo)",
+      "module": "4-2-3-1",
+      "module_text": "4-2-3-1",
+      "lineup_text": "Muric; Walukiewicz, Idzes, Candé, Obrador; Thorstvedt, Matic; Berardi, Adzic, Laurientè; Pinamonti.",
+      "groups": [
+        [
+          "Muric"
+        ],
+        [
+          "Walukiewicz",
+          "Idzes",
+          "Candé",
+          "Obrador"
+        ],
+        [
+          "Thorstvedt",
+          "Matic"
+        ],
+        [
+          "Berardi",
+          "Adzic",
+          "Laurientè"
+        ],
+        [
+          "Pinamonti"
+        ]
+      ],
+      "players": [
+        "Muric",
+        "Walukiewicz",
+        "Idzes",
+        "Candé",
+        "Obrador",
+        "Thorstvedt",
+        "Matic",
+        "Berardi",
+        "Adzic",
+        "Laurientè",
+        "Pinamonti"
+      ],
+      "ballottaggi": "Walukiewicz/Missori; Obrador/Doig; Adzic/Bakola; Laurientè/Dominguez; Pinamonti/Bowie",
+      "rigoristi": "Berardi, Pinamonti, Laurientè",
+      "calci_da_fermo": "Berardi, Laurientè, Adzic"
+    },
+    {
+      "team": "TORINO",
+      "coach": "Ignazio Abate (nuovo)",
+      "module": "3-4-2-1",
+      "module_text": "3-4-2-1",
+      "lineup_text": "Paleari; Comuzzo, Ismajli, Comert; Pedersen, Gineitis, Fitz-Jim, Cacciamani; Casadei, Vlasic; Simeone.",
+      "groups": [
+        [
+          "Paleari"
+        ],
+        [
+          "Comuzzo",
+          "Ismajli",
+          "Comert"
+        ],
+        [
+          "Pedersen",
+          "Gineitis",
+          "Fitz-Jim",
+          "Cacciamani"
+        ],
+        [
+          "Casadei",
+          "Vlasic"
+        ],
+        [
+          "Simeone"
+        ]
+      ],
+      "players": [
+        "Paleari",
+        "Comuzzo",
+        "Ismajli",
+        "Comert",
+        "Pedersen",
+        "Gineitis",
+        "Fitz-Jim",
+        "Cacciamani",
+        "Casadei",
+        "Vlasic",
+        "Simeone"
+      ],
+      "ballottaggi": "Comuzzo/Coco, Ismajli/Coco; Casadei/Oristanio",
+      "rigoristi": "Vlasic, Kulenovic, Simeone",
+      "calci_da_fermo": "Vlasic, Oristanio, Gineitis"
+    },
+    {
+      "team": "UDINESE",
+      "coach": "Kosta Runjaic (confermato)",
+      "module": "3-4-2-1",
+      "module_text": "3-4-2-1",
+      "lineup_text": "Okoye; Bertola, Kabasele, Solet; Vojvoda, Piotrowski, Karlstrom, Kamara; Zaniolo, Ekkelenkamp; Davis.",
+      "groups": [
+        [
+          "Okoye"
+        ],
+        [
+          "Bertola",
+          "Kabasele",
+          "Solet"
+        ],
+        [
+          "Vojvoda",
+          "Piotrowski",
+          "Karlstrom",
+          "Kamara"
+        ],
+        [
+          "Zaniolo",
+          "Ekkelenkamp"
+        ],
+        [
+          "Davis"
+        ]
+      ],
+      "players": [
+        "Okoye",
+        "Bertola",
+        "Kabasele",
+        "Solet",
+        "Vojvoda",
+        "Piotrowski",
+        "Karlstrom",
+        "Kamara",
+        "Zaniolo",
+        "Ekkelenkamp",
+        "Davis"
+      ],
+      "ballottaggi": "Ekkelenkamp/Unai Gomez, Piotrowski/Miller",
+      "rigoristi": "Davis, Solet, Zaniolo",
+      "calci_da_fermo": "Zaniolo, Ekkelenkamp, Unai Gomez"
+    },
+    {
+      "team": "VENEZIA",
+      "coach": "Giovanni Stroppa (confermato)",
+      "module": "3-5-2",
+      "module_text": "3-5-2",
+      "lineup_text": "Stankovic; Schingtienne, Bella-Kotchap, Halhal; Correia, Kike Perez, Busio, Basic, Hainaut; Yeboah, Akor Adams.",
+      "groups": [
+        [
+          "Stankovic"
+        ],
+        [
+          "Schingtienne",
+          "Bella-Kotchap",
+          "Halhal"
+        ],
+        [
+          "Correia",
+          "Kike Perez",
+          "Busio",
+          "Basic",
+          "Hainaut"
+        ],
+        [
+          "Yeboah",
+          "Akor Adams"
+        ]
+      ],
+      "players": [
+        "Stankovic",
+        "Schingtienne",
+        "Bella-Kotchap",
+        "Halhal",
+        "Correia",
+        "Kike Perez",
+        "Busio",
+        "Basic",
+        "Hainaut",
+        "Yeboah",
+        "Akor Adams"
+      ],
+      "ballottaggi": "Halhal/Moreno; Correia/Sagrado, Kike Perez/Sohm, Yeboah/Rrahmani; Adams/Adorante",
+      "rigoristi": "Adams, Rrahmani, Adorante",
+      "calci_da_fermo": "Busio, Yeboah, Kike Perez"
+    }
+  ]
+}

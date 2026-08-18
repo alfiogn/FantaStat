@@ -778,3 +778,115 @@ a:hover {
     font-size: .95rem;
     color: #dbeafe;
 }
+
+.boxplot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.boxplot-card {
+    background: rgba(15, 23, 42, .65);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1rem;
+}
+
+.boxplot-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .65rem;
+    color: #dbeafe;
+}
+
+.boxplot-header span {
+    color: var(--muted);
+    font-size: .8rem;
+}
+
+.boxplot-svg {
+    width: 100%;
+    height: 72px;
+    overflow: visible;
+}
+
+.boxplot-whisker,
+.boxplot-cap,
+.boxplot-median {
+    stroke: #e2e8f0;
+    stroke-width: 1.8;
+    vector-effect: non-scaling-stroke;
+}
+
+.boxplot-box {
+    fill: rgba(56, 189, 248, .28);
+    stroke: #38bdf8;
+    stroke-width: 1.8;
+    vector-effect: non-scaling-stroke;
+}
+
+.boxplot-median {
+    stroke: #f97316;
+    stroke-width: 2.4;
+}
+
+.boxplot-mean {
+    fill: #22c55e;
+    stroke: #dcfce7;
+    stroke-width: .8;
+    vector-effect: non-scaling-stroke;
+}
+
+.boxplot-values {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: .35rem;
+    color: var(--muted);
+    font-size: .75rem;
+    text-align: center;
+}
+
+.boxplot-empty {
+    color: var(--muted);
+    padding: 1rem;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, .65);
+}
+
+.modal-content {
+    width: min(700px, 95vw);
+    padding: 1.5rem;
+    border-radius: 12px;
+
+    background: #111827;
+}
+
+.note-cell {
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.positive {
+    color: #22c55e;
+}
+
+.negative {
+    color: #ef4444;
+}

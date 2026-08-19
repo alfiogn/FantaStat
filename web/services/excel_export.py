@@ -131,20 +131,23 @@ def _style_sheet(ws) -> None:
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
 
-    for cell in ws:
+    # Header row only.
+    for cell in ws[1]:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center")
         cell.border = border
 
+    # Body rows.
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
         for cell in row:
             cell.border = border
             cell.alignment = Alignment(vertical="top", wrap_text=True)
+
             if row_idx % 2 == 0:
                 cell.fill = even_fill
 
-    # W DELTA column = I
+    # W DELTA column = I.
     if ws.max_row >= 2:
         ws.conditional_formatting.add(
             f"I2:I{ws.max_row}",
@@ -168,9 +171,11 @@ def _style_sheet(ws) -> None:
     for column in ws.columns:
         max_len = 0
         letter = get_column_letter(column[0].column)
+
         for cell in column:
             value = "" if cell.value is None else str(cell.value)
             max_len = max(max_len, min(len(value), 60))
+
         ws.column_dimensions[letter].width = max(10, max_len + 2)
 
 

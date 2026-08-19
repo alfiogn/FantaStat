@@ -3,7 +3,7 @@
 let fvChart = null;
 let priceChart = null;
 let comparePayload = null;
-let compareDistributionChart = null;
+const compareDistributionCharts = {};
 
 function idsFromPage() {
     const fromTemplate = window.FANTASTAT_COMPARE_IDS || [];
@@ -148,14 +148,119 @@ function renderCompareDistribution(players) {
     });
 }
 
+function renderMetricDistribution(metric, players, colors) {
+    const canvasId = `compareDist_${metric}`;
+    const canvas = document.getElementById(canvasId);
+
+    if (!canvas) return;
+
+    const labelSet = new Set();
+
+    players.forEach(player => {
+        const data =
+            player.summary.window_distributions?.[metric] || [];
+
+        data.forEach(row => labelSet.add(row.label));
+    });
+
+    const labels = [...labelSet];
+
+    const datasets = players.map((player, idx) => {
+        const distribution =
+            player.summary.window_distributions?.[metric] || [];
+
+        const map = new Map(
+            distribution.map(x => [x.label, x.percentage])
+        );
+
+        return {
+            label: player.name,
+            data: labels.map(l => map.get(l) || 0),
+            backgroundColor: colors[idx % colors.length]
+        };
+    });
+
+    compareDistributionCharts[canvasId]?.destroy();
+
+    compareDistributionCharts[canvasId] = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#dbeafe'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#94a3b8' }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: v => `${v}%`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderCompareDistributions(players) {
+    const grid = document.getElementById('compareDistributionGrid');
+    if (!grid) return;
+
+    const metrics = [
+        ['goals', 'Goals'],
+        ['assists', 'Assists'],
+        ['voto', 'Voto'],
+        ['fantavoto', 'Fantavoto'],
+        ['yellow_card', 'Yellow card'],
+        ['red_card', 'Red card'],
+        ['result', 'Result'],
+        ['status', 'Status'],
+    ];
+
+    grid.innerHTML = metrics.map(([metric, title]) => `
+        <article class="distribution-card">
+            <h3>${title}</h3>
+            <canvas id="compareDist_${metric}" height="180"></canvas>
+        </article>
+    `).join('');
+
+    const colors = [
+        '#38bdf8',
+        '#f97316',
+        '#22c55e',
+        '#a78bfa',
+        '#eab308',
+        '#ef4444',
+        '#14b8a6',
+        '#64748b'
+    ];
+
+    for (const [metric] of metrics) {
+        renderMetricDistribution(metric, players, colors);
+    }
+}
+
 function renderCompare() {
     const players = filteredPlayers();
 
     renderCards(players);
     renderMetrics(comparePayload?.metrics || [], players);
     renderCharts(players);
-    renderCompareDistribution(players);
-    renderCompareBoxplots(players);
+    // renderCompareDistribution(players);
+    renderCompareDistributions(players);
+    // renderCompareBoxplots(players);
 }
 
 function renderCards(players) {
@@ -330,14 +435,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         Fantastat.clearCompare();
         window.location.href = '/compare';
     };
-
-    document
-        .getElementById('compareDistributionMetric')
-        ?.addEventListener('change', renderCompare);
-    
-    document
-        .getElementById('compareBoxplotMetric')
-        ?.addEventListener('change', renderCompare);
 
     await loadCompare();
 });

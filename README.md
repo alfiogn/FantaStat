@@ -1,15 +1,36 @@
-# FantaStat
-A tool to prepare for the "Asta del Fantacalcio". Fantalega on [Fantacalcio](https://www.fantacalcio.it/).
+# Fantastat Local Web Dashboard
 
-FantaStat is a plotly dashboard to analyse fanta-football data to prepare the auction.
+## Build database
 
-## Installation
-
-To install in editable version:
-```
-python -m pip install -e <fantastat_path>
+```bash
+fantastat builddb --cache cache --replace
 ```
 
+or:
 
+```bash
+python src/fantastat/builder.py --cache cache --replace
+```
 
+## Run web app
 
+```bash
+cd web
+pip install -r ../requirements.txt
+python app.py
+```
+
+Open:
+
+```text
+http://localhost:5000
+```
+
+## Global Last Days
+
+The topbar contains:
+
+- season selector
+- `Last days`, default `38`
+
+The backend computes a rolling matchday window across seasons. If selected season 2027 has no FINISHED matchdays yet and `Last days = 38`, the app uses 2026 MD1..38. After 2027 MD1 is FINISHED, the app uses 2026 MD2..38 plus 2027 MD1. Dashboard, player and comparison views all use this same global window.

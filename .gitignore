@@ -210,4 +210,13 @@ cython_debug/
 # Marimo
 marimo/_static/
 marimo/_lsp/
+
+# Other
 __marimo__/
+.venv/
+.db
+__pycache__/
+.pytest_cache/
+*.pyc
+cache/
+*.egg-info

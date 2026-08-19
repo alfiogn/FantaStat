@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Fantastat{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/api.js') }}" defer></script>{% block head %}{% endblock %}
+</head>
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading...</div>
+</div>
+<body>
+    <header class="topbar"><a class="brand" href="/"><span
+                class="brand-mark">F</span><span><strong>Fantastat</strong><small>local analytics</small></span></a>
+        <nav class="topnav"><a href="/">Dashboard</a><a href="/compare" id="navCompare">Compare</a><a href="/lineups">Lineups</a>
+</nav>
+        <div class="topbar-actions"><label class="season-label" for="globalSeason">Season</label><select
+                id="globalSeason" class="select compact"
+                data-default-season="{{ default_season or '' }}"></select><label class="season-label"
+                for="globalDays">Last days</label><input id="globalDays" class="input compact days-input" type="number"
+                min="1" max="365" value="38"><span id="globalWindowInfo" class="window-info"></span></div>
+    </header>
+    <main class="page">{% block body %}{% endblock %}</main>
+    <div id="toast" class="toast hidden"></div>{% block scripts %}{% endblock %}
+</body>
+
+</html>
